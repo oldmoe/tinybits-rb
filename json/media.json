@@ -1,0 +1,142 @@
+[
+    {
+      "asset_id": "img_sunset_2025_04",
+      "title": "Sunset at Golden Gate",
+      "type": "image",
+      "format": "jpeg",
+      "created_at": "2025-03-28T18:42:15Z",
+      "dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "size_bytes": 2458743,
+      "tags": ["sunset", "landscape", "san_francisco", "bridge"],
+      "author": "usr_photographer_42",
+      "license": "cc_by_4.0"
+    },
+    {
+      "asset_id": "vid_drone_city_01",
+      "title": "Aerial View of Manhattan",
+      "type": "video",
+      "format": "mp4",
+      "created_at": "2025-03-30T12:15:22Z",
+      "dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "duration_seconds": 185,
+      "size_bytes": 245874300,
+      "tags": ["aerial", "drone", "cityscape", "new_york"],
+      "author": "usr_filmmaker_77",
+      "license": "commercial"
+    },
+    {
+      "asset_id": "aud_podcast_ep23",
+      "title": "The Future of AI - Episode 23",
+      "type": "audio",
+      "format": "mp3",
+      "created_at": "2025-04-01T08:30:00Z",
+      "duration_seconds": 2580,
+      "size_bytes": 61254400,
+      "tags": ["podcast", "technology", "ai", "interview"],
+      "author": "usr_podcaster_15",
+      "license": "cc_by_nc_4.0"
+    },
+    {
+      "asset_id": "img_portrait_studio",
+      "title": "Professional Headshot",
+      "type": "image",
+      "format": "png",
+      "created_at": "2025-04-02T14:22:45Z",
+      "dimensions": {
+        "width": 2400,
+        "height": 3000
+      },
+      "size_bytes": 4125650,
+      "tags": ["portrait", "professional", "headshot", "studio"],
+      "author": "usr_photographer_29",
+      "license": "rights_reserved"
+    },
+    {
+      "asset_id": "doc_presentation_q1",
+      "title": "Q1 Financial Results",
+      "type": "document",
+      "format": "pdf",
+      "created_at": "2025-04-05T10:15:30Z",
+      "pages": 32,
+      "size_bytes": 3845200,
+      "tags": ["financial", "quarterly", "business", "report"],
+      "author": "usr_analyst_56",
+      "license": "internal_only"
+    },
+    {
+      "asset_id": "img_product_white_bg",
+      "title": "Smart Speaker Product Shot",
+      "type": "image",
+      "format": "tiff",
+      "created_at": "2025-04-07T11:20:15Z",
+      "dimensions": {
+        "width": 5000,
+        "height": 3333
+      },
+      "size_bytes": 75482000,
+      "tags": ["product", "electronics", "e-commerce", "white_background"],
+      "author": "usr_photographer_18",
+      "license": "commercial"
+    },
+    {
+      "asset_id": "vid_tutorial_coding",
+      "title": "React Hooks Masterclass",
+      "type": "video",
+      "format": "mp4",
+      "created_at": "2025-04-09T15:45:22Z",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "duration_seconds": 3720,
+      "size_bytes": 842751000,
+      "tags": ["tutorial", "coding", "react", "javascript"],
+      "author": "usr_developer_33",
+      "license": "cc_by_4.0"
+    },
+    {
+      "asset_id": "aud_music_original",
+      "title": "Midnight in Tokyo",
+      "type": "audio",
+      "format": "wav",
+      "created_at": "2025-04-10T23:10:45Z",
+      "duration_seconds": 218,
+      "size_bytes": 38654400,
+      "tags": ["music", "electronic", "ambient", "instrumental"],
+      "author": "usr_musician_92",
+      "license": "cc_by_nc_nd_4.0"
+    },
+    {
+      "asset_id": "img_event_conference",
+      "title": "TechCon 2025 Opening",
+      "type": "image",
+      "format": "jpeg",
+      "created_at": "2025-04-12T09:30:15Z",
+      "dimensions": {
+        "width": 4500,
+        "height": 3000
+      },
+      "size_bytes": 8245700,
+      "tags": ["event", "conference", "technology", "keynote"],
+      "author": "usr_photographer_42",
+      "license": "press_usage"
+    },
+    {
+      "asset_id": "doc_ebook_design",
+      "title": "UI/UX Design Principles",
+      "type": "document",
+      "format": "epub",
+      "created_at": "2025-04-14T13:45:30Z",
+      "pages": 145,
+      "size_bytes": 15784000,
+      "tags": ["ebook", "design", "ui", "ux", "education"],
+      "author": "usr_designer_08",
+      "license": "purchase_required"
+    }
+  ]

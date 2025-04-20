@@ -1,0 +1,182 @@
+[
+    {
+      "id": "usr_12345",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "role": "admin",
+      "created_at": "2025-01-15T08:30:22Z",
+      "preferences": {
+        "notifications": true,
+        "theme": "dark",
+        "language": "en-US"
+      },
+      "address": {
+        "street": "123 Main St",
+        "city": "San Francisco",
+        "state": "CA",
+        "postal_code": "94105"
+      }
+    },
+    {
+      "id": "usr_12346",
+      "name": "Robert Johnson",
+      "email": "robert.johnson@example.com",
+      "role": "user",
+      "created_at": "2025-01-16T14:22:45Z",
+      "preferences": {
+        "notifications": false,
+        "theme": "light",
+        "language": "en-GB"
+      },
+      "address": {
+        "street": "45 Park Avenue",
+        "city": "New York",
+        "state": "NY",
+        "postal_code": "10028"
+      }
+    },
+    {
+      "id": "usr_12347",
+      "name": "Maria Garcia",
+      "email": "maria.garcia@example.com",
+      "role": "editor",
+      "created_at": "2025-01-18T09:15:30Z",
+      "preferences": {
+        "notifications": true,
+        "theme": "system",
+        "language": "es-ES"
+      },
+      "address": {
+        "street": "789 Elm Street",
+        "city": "Miami",
+        "state": "FL",
+        "postal_code": "33101"
+      }
+    },
+    {
+      "id": "usr_12348",
+      "name": "David Lee",
+      "email": "david.lee@example.com",
+      "role": "user",
+      "created_at": "2025-01-20T11:45:12Z",
+      "preferences": {
+        "notifications": true,
+        "theme": "dark",
+        "language": "en-US"
+      },
+      "address": {
+        "street": "321 Oak Drive",
+        "city": "Chicago",
+        "state": "IL",
+        "postal_code": "60601"
+      }
+    },
+    {
+      "id": "usr_12349",
+      "name": "Sophia Nguyen",
+      "email": "sophia.nguyen@example.com",
+      "role": "admin",
+      "created_at": "2025-01-22T16:33:18Z",
+      "preferences": {
+        "notifications": false,
+        "theme": "light",
+        "language": "en-US"
+      },
+      "address": {
+        "street": "567 Pine Street",
+        "city": "Seattle",
+        "state": "WA",
+        "postal_code": "98101"
+      }
+    },
+    {
+      "id": "usr_12350",
+      "name": "James Wilson",
+      "email": "james.wilson@example.com",
+      "role": "user",
+      "created_at": "2025-01-25T13:20:45Z",
+      "preferences": {
+        "notifications": true,
+        "theme": "dark",
+        "language": "en-AU"
+      },
+      "address": {
+        "street": "89 Queen Street",
+        "city": "Sydney",
+        "state": "NSW",
+        "postal_code": "2000"
+      }
+    },
+    {
+      "id": "usr_12351",
+      "name": "Emma Brown",
+      "email": "emma.brown@example.com",
+      "role": "editor",
+      "created_at": "2025-01-27T10:12:36Z",
+      "preferences": {
+        "notifications": true,
+        "theme": "system",
+        "language": "en-US"
+      },
+      "address": {
+        "street": "234 Maple Avenue",
+        "city": "Boston",
+        "state": "MA",
+        "postal_code": "02108"
+      }
+    },
+    {
+      "id": "usr_12352",
+      "name": "Carlos Rodriguez",
+      "email": "carlos.rodriguez@example.com",
+      "role": "user",
+      "created_at": "2025-01-30T09:45:22Z",
+      "preferences": {
+        "notifications": false,
+        "theme": "dark",
+        "language": "es-MX"
+      },
+      "address": {
+        "street": "456 Cedar Lane",
+        "city": "Los Angeles",
+        "state": "CA",
+        "postal_code": "90001"
+      }
+    },
+    {
+      "id": "usr_12353",
+      "name": "Anna Müller",
+      "email": "anna.muller@example.com",
+      "role": "user",
+      "created_at": "2025-02-02T15:18:40Z",
+      "preferences": {
+        "notifications": true,
+        "theme": "light",
+        "language": "de-DE"
+      },
+      "address": {
+        "street": "123 Birkenstraße",
+        "city": "Berlin",
+        "state": "BE",
+        "postal_code": "10115"
+      }
+    },
+    {
+      "id": "usr_12354",
+      "name": "Ahmed Khan",
+      "email": "ahmed.khan@example.com",
+      "role": "admin",
+      "created_at": "2025-02-05T08:27:15Z",
+      "preferences": {
+        "notifications": true,
+        "theme": "system",
+        "language": "en-GB"
+      },
+      "address": {
+        "street": "78 High Street",
+        "city": "London",
+        "state": "UK",
+        "postal_code": "SW1A 1AA"
+      }
+    }
+  ]

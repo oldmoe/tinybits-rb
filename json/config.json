@@ -1,0 +1,192 @@
+[
+    {
+      "app_version": "2.3.4",
+      "features": {
+        "dark_mode": true,
+        "beta_features": false,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api.example.com/v2",
+        "timeout_ms": 5000,
+        "retry_count": 3
+      },
+      "display": {
+        "resolution": "auto",
+        "font_size": "medium",
+        "animations": true
+      },
+      "default_locale": "en-US"
+    },
+    {
+      "app_version": "2.3.4",
+      "features": {
+        "dark_mode": false,
+        "beta_features": true,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api.example.com/v2",
+        "timeout_ms": 3000,
+        "retry_count": 5
+      },
+      "display": {
+        "resolution": "1080p",
+        "font_size": "large",
+        "animations": false
+      },
+      "default_locale": "fr-FR"
+    },
+    {
+      "app_version": "2.3.5-beta",
+      "features": {
+        "dark_mode": true,
+        "beta_features": true,
+        "auto_update": false
+      },
+      "api": {
+        "endpoint": "https://beta-api.example.com/v2",
+        "timeout_ms": 10000,
+        "retry_count": 2
+      },
+      "display": {
+        "resolution": "4k",
+        "font_size": "small",
+        "animations": true
+      },
+      "default_locale": "en-GB"
+    },
+    {
+      "app_version": "2.3.4",
+      "features": {
+        "dark_mode": true,
+        "beta_features": false,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api-eu.example.com/v2",
+        "timeout_ms": 5000,
+        "retry_count": 3
+      },
+      "display": {
+        "resolution": "auto",
+        "font_size": "medium",
+        "animations": false
+      },
+      "default_locale": "de-DE"
+    },
+    {
+      "app_version": "2.3.4",
+      "features": {
+        "dark_mode": false,
+        "beta_features": false,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api.example.com/v2",
+        "timeout_ms": 7000,
+        "retry_count": 3
+      },
+      "display": {
+        "resolution": "720p",
+        "font_size": "medium",
+        "animations": true
+      },
+      "default_locale": "es-ES"
+    },
+    {
+      "app_version": "2.3.4",
+      "features": {
+        "dark_mode": true,
+        "beta_features": false,
+        "auto_update": false
+      },
+      "api": {
+        "endpoint": "https://api.example.com/v2",
+        "timeout_ms": 5000,
+        "retry_count": 4
+      },
+      "display": {
+        "resolution": "auto",
+        "font_size": "small",
+        "animations": true
+      },
+      "default_locale": "ja-JP"
+    },
+    {
+      "app_version": "2.3.5",
+      "features": {
+        "dark_mode": false,
+        "beta_features": false,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api.example.com/v2",
+        "timeout_ms": 6000,
+        "retry_count": 3
+      },
+      "display": {
+        "resolution": "1440p",
+        "font_size": "medium",
+        "animations": false
+      },
+      "default_locale": "en-US"
+    },
+    {
+      "app_version": "2.3.4",
+      "features": {
+        "dark_mode": true,
+        "beta_features": true,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api-dev.example.com/v2",
+        "timeout_ms": 15000,
+        "retry_count": 5
+      },
+      "display": {
+        "resolution": "auto",
+        "font_size": "medium",
+        "animations": true
+      },
+      "default_locale": "en-US"
+    },
+    {
+      "app_version": "2.3.4",
+      "features": {
+        "dark_mode": true,
+        "beta_features": false,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api.example.com/v2",
+        "timeout_ms": 4000,
+        "retry_count": 2
+      },
+      "display": {
+        "resolution": "auto",
+        "font_size": "large",
+        "animations": false
+      },
+      "default_locale": "pt-BR"
+    },
+    {
+      "app_version": "2.3.6-alpha",
+      "features": {
+        "dark_mode": true,
+        "beta_features": true,
+        "auto_update": true
+      },
+      "api": {
+        "endpoint": "https://api-next.example.com/v3",
+        "timeout_ms": 8000,
+        "retry_count": 3
+      },
+      "display": {
+        "resolution": "auto",
+        "font_size": "medium",
+        "animations": true
+      },
+      "default_locale": "en-US"
+    }
+  ]

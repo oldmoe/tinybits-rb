@@ -1,0 +1,142 @@
+[
+    {
+      "transaction_id": "txn_98765432",
+      "amount": 129.99,
+      "currency": "USD",
+      "status": "completed",
+      "timestamp": "2025-04-10T15:42:18Z",
+      "account_id": "acct_567890",
+      "merchant": "Acme Supplies",
+      "category": "office_expenses",
+      "payment_method": {
+        "type": "credit_card",
+        "last4": "4242"
+      }
+    },
+    {
+      "transaction_id": "txn_98765433",
+      "amount": 45.50,
+      "currency": "USD",
+      "status": "completed",
+      "timestamp": "2025-04-10T16:30:22Z",
+      "account_id": "acct_567890",
+      "merchant": "City Parking",
+      "category": "transportation",
+      "payment_method": {
+        "type": "debit_card",
+        "last4": "8765"
+      }
+    },
+    {
+      "transaction_id": "txn_98765434",
+      "amount": 1299.00,
+      "currency": "USD",
+      "status": "pending",
+      "timestamp": "2025-04-11T09:15:30Z",
+      "account_id": "acct_567891",
+      "merchant": "TechGadgets Inc",
+      "category": "electronics",
+      "payment_method": {
+        "type": "credit_card",
+        "last4": "3456"
+      }
+    },
+    {
+      "transaction_id": "txn_98765435",
+      "amount": 8.75,
+      "currency": "USD",
+      "status": "completed",
+      "timestamp": "2025-04-11T12:10:45Z",
+      "account_id": "acct_567890",
+      "merchant": "Morning Brew Coffee",
+      "category": "food_and_drink",
+      "payment_method": {
+        "type": "mobile_wallet",
+        "last4": "N/A"
+      }
+    },
+    {
+      "transaction_id": "txn_98765436",
+      "amount": 1500.00,
+      "currency": "EUR",
+      "status": "completed",
+      "timestamp": "2025-04-12T10:22:18Z",
+      "account_id": "acct_567892",
+      "merchant": "Rent Payment",
+      "category": "housing",
+      "payment_method": {
+        "type": "bank_transfer",
+        "last4": "9876"
+      }
+    },
+    {
+      "transaction_id": "txn_98765437",
+      "amount": 29.99,
+      "currency": "USD",
+      "status": "completed",
+      "timestamp": "2025-04-12T14:45:30Z",
+      "account_id": "acct_567890",
+      "merchant": "Streaming Plus",
+      "category": "entertainment",
+      "payment_method": {
+        "type": "credit_card",
+        "last4": "4242"
+      }
+    },
+    {
+      "transaction_id": "txn_98765438",
+      "amount": 325.75,
+      "currency": "USD",
+      "status": "completed",
+      "timestamp": "2025-04-13T09:30:15Z",
+      "account_id": "acct_567893",
+      "merchant": "Downtown Dental",
+      "category": "health",
+      "payment_method": {
+        "type": "insurance",
+        "last4": "7701"
+      }
+    },
+    {
+      "transaction_id": "txn_98765439",
+      "amount": 58.25,
+      "currency": "USD",
+      "status": "refunded",
+      "timestamp": "2025-04-13T13:12:40Z",
+      "account_id": "acct_567890",
+      "merchant": "Urban Outfitters",
+      "category": "shopping",
+      "payment_method": {
+        "type": "credit_card",
+        "last4": "4242"
+      }
+    },
+    {
+      "transaction_id": "txn_98765440",
+      "amount": 75.00,
+      "currency": "GBP",
+      "status": "completed",
+      "timestamp": "2025-04-14T08:45:22Z",
+      "account_id": "acct_567894",
+      "merchant": "London Transit",
+      "category": "transportation",
+      "payment_method": {
+        "type": "transit_card",
+        "last4": "1234"
+      }
+    },
+    {
+      "transaction_id": "txn_98765441",
+      "amount": 2499.99,
+      "currency": "USD",
+      "status": "pending",
+      "timestamp": "2025-04-15T16:30:10Z",
+      "account_id": "acct_567890",
+      "merchant": "MacroComputers",
+      "category": "electronics",
+      "payment_method": {
+        "type": "financing",
+        "last4": "5678"
+      }
+    }
+  ]

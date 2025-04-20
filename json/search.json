@@ -1,0 +1,217 @@
+[
+    {
+      "query": "coffee shops open now",
+      "total_results": 42,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "shop_123",
+          "name": "Downtown Coffee Shop",
+          "rating": 4.8,
+          "distance_km": 0.7,
+          "open_until": "22:00",
+          "highlights": ["fair trade", "outdoor seating"]
+        }
+      ],
+      "facets": {
+        "price_range": ["$", "$$", "$$$"],
+        "features": ["wifi", "outdoor_seating", "takeout"]
+      },
+      "search_time_ms": 125
+    },
+    {
+      "query": "hiking trails near me",
+      "total_results": 15,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "trail_456",
+          "name": "Eagle Ridge Trail",
+          "rating": 4.5,
+          "distance_km": 3.2,
+          "difficulty": "moderate",
+          "highlights": ["scenic views", "dog friendly"]
+        }
+      ],
+      "facets": {
+        "difficulty": ["easy", "moderate", "difficult"],
+        "features": ["dog_friendly", "waterfall", "kid_friendly"]
+      },
+      "search_time_ms": 98
+    },
+    {
+      "query": "javascript developer",
+      "total_results": 238,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "job_789",
+          "title": "Senior JavaScript Developer",
+          "company": "TechCorp Inc",
+          "salary_range": "$120K-$150K",
+          "location": "Remote",
+          "highlights": ["React", "Node.js", "5+ years experience"]
+        }
+      ],
+      "facets": {
+        "experience_level": ["entry", "mid", "senior"],
+        "job_type": ["full_time", "contract", "part_time"]
+      },
+      "search_time_ms": 215
+    },
+    {
+      "query": "wireless headphones",
+      "total_results": 156,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "prod_101",
+          "name": "SoundPro Wireless Headphones",
+          "price": 149.99,
+          "rating": 4.6,
+          "in_stock": true,
+          "highlights": ["noise cancelling", "40hr battery"]
+        }
+      ],
+      "facets": {
+        "price_range": ["under $50", "$50-$100", "$100-$200", "over $200"],
+        "features": ["noise_cancelling", "waterproof", "sports"]
+      },
+      "search_time_ms": 145
+    },
+    {
+      "query": "apartments downtown",
+      "total_results": 73,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "apt_202",
+          "name": "Luxury Downtown Loft",
+          "price": 2250,
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "available_from": "2025-05-01",
+          "highlights": ["newly renovated", "rooftop access"]
+        }
+      ],
+      "facets": {
+        "bedrooms": [1, 2, 3, "4+"],
+        "price_range": ["$1000-$1500", "$1500-$2000", "$2000-$3000", "$3000+"]
+      },
+      "search_time_ms": 187
+    },
+    {
+      "query": "italian restaurants",
+      "total_results": 28,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "rest_303",
+          "name": "Trattoria Milano",
+          "rating": 4.7,
+          "price_level": "$$",
+          "distance_km": 1.5,
+          "highlights": ["handmade pasta", "extensive wine list"]
+        }
+      ],
+      "facets": {
+        "price_level": ["$", "$$", "$$$", "$$$$"],
+        "features": ["outdoor_seating", "takeout", "delivery"]
+      },
+      "search_time_ms": 110
+    },
+    {
+      "query": "fantasy books",
+      "total_results": 425,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "book_505",
+          "title": "The Crystal Kingdom",
+          "author": "Sarah J. Maas",
+          "rating": 4.6,
+          "format": "hardcover",
+          "price": 24.99,
+          "highlights": ["bestseller", "new release"]
+        }
+      ],
+      "facets": {
+        "format": ["hardcover", "paperback", "ebook", "audiobook"],
+        "sub_genre": ["epic", "urban", "young_adult"]
+      },
+      "search_time_ms": 198
+    },
+    {
+      "query": "yoga classes",
+      "total_results": 32,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "class_606",
+          "name": "Vinyasa Flow with Michelle",
+          "studio": "Urban Yoga Center",
+          "price_per_class": 18.00,
+          "distance_km": 2.3,
+          "next_session": "2025-04-18T18:30:00Z",
+          "highlights": ["beginner friendly", "mats provided"]
+        }
+      ],
+      "facets": {
+        "style": ["vinyasa", "hatha", "bikram", "yin"],
+        "level": ["beginner", "intermediate", "advanced"]
+      },
+      "search_time_ms": 88
+    },
+    {
+      "query": "electric vehicles",
+      "total_results": 52,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "car_707",
+          "name": "EcoSpeed Model X",
+          "price": 42500,
+          "range_km": 420,
+          "year": 2025,
+          "in_stock": true,
+          "highlights": ["fast charging", "autopilot"]
+        }
+      ],
+      "facets": {
+        "price_range": ["under $30K", "$30K-$50K", "$50K-$80K", "over $80K"],
+        "range_km": ["under 300", "300-400", "400-500", "over 500"]
+      },
+      "search_time_ms": 176
+    },
+    {
+      "query": "online courses python",
+      "total_results": 189,
+      "page": 1,
+      "page_size": 10,
+      "results": [
+        {
+          "id": "course_808",
+          "title": "Python for Data Science Masterclass",
+          "provider": "TechAcademy",
+          "rating": 4.9,
+          "duration_hours": 42,
+          "price": 89.99,
+          "highlights": ["certificate included", "hands-on projects"]
+        }
+      ],
+      "facets": {
+        "level": ["beginner", "intermediate", "advanced"],
+        "focus": ["web_dev", "data_science", "automation", "game_dev"]
+      },
+      "search_time_ms": 154
+    }
+  ]

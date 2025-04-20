@@ -1,0 +1,142 @@
+[
+    {
+      "series_id": "temp_sensor_42",
+      "start_time": "2025-04-16T00:00:00Z",
+      "interval_seconds": 300,
+      "values": [
+        22.5, 22.3, 22.4, 22.8, 23.1, 23.4, 23.7, 23.9, 24.1, 24.0, 23.8, 23.5
+      ],
+      "unit": "celsius",
+      "status": "normal",
+      "metadata": {
+        "device_id": "thermo_living_room",
+        "calibration_date": "2025-01-05T00:00:00Z"
+      }
+    },
+    {
+      "series_id": "cpu_server_01",
+      "start_time": "2025-04-16T00:00:00Z",
+      "interval_seconds": 60,
+      "values": [
+        12.5, 14.2, 18.7, 25.3, 34.8, 45.2, 65.7, 72.3, 68.9, 45.6, 32.1, 20.5
+      ],
+      "unit": "percent",
+      "status": "normal",
+      "metadata": {
+        "device_id": "server_rack_a_03",
+        "cluster": "production_db"
+      }
+    },
+    {
+      "series_id": "traffic_site_main",
+      "start_time": "2025-04-16T00:00:00Z",
+      "interval_seconds": 3600,
+      "values": [
+        1240, 980, 750, 620, 580, 890, 1450, 2100, 2850, 3200, 3150, 2950
+      ],
+      "unit": "requests_per_hour",
+      "status": "normal",
+      "metadata": {
+        "service": "web_frontend",
+        "environment": "production"
+      }
+    },
+    {
+      "series_id": "energy_consumption_b4",
+      "start_time": "2025-04-16T00:00:00Z",
+      "interval_seconds": 3600,
+      "values": [
+        45.2, 42.8, 41.5, 40.9, 41.2, 43.8, 50.2, 62.5, 70.3, 74.8, 76.5, 75.2
+      ],
+      "unit": "kilowatt_hours",
+      "status": "normal",
+      "metadata": {
+        "building_id": "hq_building_4",
+        "floor": "all"
+      }
+    },
+    {
+      "series_id": "stock_price_xyz",
+      "start_time": "2025-04-16T14:30:00Z",
+      "interval_seconds": 60,
+      "values": [
+        142.50, 142.55, 142.48, 142.60, 142.65, 142.75, 142.85, 142.80, 142.78, 142.82, 142.90, 142.95
+      ],
+      "unit": "usd",
+      "status": "normal",
+      "metadata": {
+        "ticker": "XYZ",
+        "exchange": "NASDAQ"
+      }
+    },
+    {
+      "series_id": "heart_rate_user_42",
+      "start_time": "2025-04-16T08:00:00Z",
+      "interval_seconds": 300,
+      "values": [
+        72, 74, 75, 78, 82, 95, 110, 125, 120, 115, 105, 85
+      ],
+      "unit": "bpm",
+      "status": "normal",
+      "metadata": {
+        "device_id": "fitness_watch_92",
+        "activity": "morning_run"
+      }
+    },
+    {
+      "series_id": "air_quality_pm25",
+      "start_time": "2025-04-16T00:00:00Z",
+      "interval_seconds": 3600,
+      "values": [
+        8.2, 7.8, 7.5, 6.9, 7.2, 9.5, 12.8, 15.2, 16.5, 14.8, 12.3, 10.5
+      ],
+      "unit": "micrograms_per_cubic_meter",
+      "status": "good",
+      "metadata": {
+        "sensor_id": "aq_downtown_03",
+        "location": "city_center"
+      }
+    },
+    {
+      "series_id": "website_latency",
+      "start_time": "2025-04-16T00:00:00Z",
+      "interval_seconds": 300,
+      "values": [
+        120, 125, 118, 122, 130, 145, 210, 250, 225, 180, 155, 135
+      ],
+      "unit": "milliseconds",
+      "status": "warning",
+      "metadata": {
+        "endpoint": "/api/users",
+        "region": "us-west"
+      }
+    },
+    {
+      "series_id": "solar_output_panel_a",
+      "start_time": "2025-04-16T06:00:00Z",
+      "interval_seconds": 3600,
+      "values": [
+        0.2, 1.5, 3.8, 5.2, 6.7, 7.5, 8.1, 8.3, 7.9, 6.4, 4.2, 1.8
+      ],
+      "unit": "kilowatt",
+      "status": "normal",
+      "metadata": {
+        "panel_id": "solar_array_05_panel_a",
+        "installation_date": "2024-05-12T00:00:00Z"
+      }
+    },
+    {
+      "series_id": "glucose_patient_123",
+      "start_time": "2025-04-16T00:00:00Z",
+      "interval_seconds": 900,
+      "values": [
+        92, 95, 102, 120, 135, 128, 115, 105, 98, 94, 90, 91
+      ],
+      "unit": "mg_per_dl",
+      "status": "normal",
+      "metadata": {
+        "device_id": "cgm_g7_42abc",
+        "patient_id": "patient_123"
+      }
+    }
+  ]

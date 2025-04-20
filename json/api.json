@@ -1,0 +1,175 @@
+[
+    {
+      "status": "success",
+      "code": 200,
+      "request_id": "req_9876543210",
+      "data": {
+        "user_id": "usr_12345",
+        "subscription_status": "active",
+        "plan": "premium",
+        "next_billing_date": "2025-05-15T00:00:00Z"
+      },
+      "meta": {
+        "processing_time_ms": 78,
+        "server": "api-west-3",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "self": "/api/v2/users/usr_12345",
+        "subscriptions": "/api/v2/users/usr_12345/subscriptions"
+      }
+    },
+    {
+      "status": "success",
+      "code": 201,
+      "request_id": "req_9876543211",
+      "data": {
+        "order_id": "ord_45678",
+        "total_amount": 129.99,
+        "items_count": 3,
+        "estimated_delivery": "2025-04-22T00:00:00Z"
+      },
+      "meta": {
+        "processing_time_ms": 145,
+        "server": "api-east-2",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "self": "/api/v2/orders/ord_45678",
+        "items": "/api/v2/orders/ord_45678/items",
+        "tracking": "/api/v2/orders/ord_45678/tracking"
+      }
+    },
+    {
+      "status": "error",
+      "code": 404,
+      "request_id": "req_9876543212",
+      "error": {
+        "message": "Resource not found",
+        "type": "resource_error",
+        "details": "The requested product with ID 'prod_nonexistent' could not be found"
+      },
+      "meta": {
+        "processing_time_ms": 45,
+        "server": "api-west-3",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "documentation": "/api/docs/errors/404"
+      }
+    },
+    {
+      "status": "success",
+      "code": 200,
+      "request_id": "req_9876543213",
+      "data": {
+        "products": [
+          {
+            "id": "prod_12345",
+            "name": "Wireless Earbuds",
+            "price": 79.99,
+            "in_stock": true
+          },
+          {
+            "id": "prod_12346",
+            "name": "Bluetooth Speaker",
+            "price": 129.99,
+            "in_stock": false
+          }
+        ],
+        "total_count": 2
+      },
+      "meta": {
+        "processing_time_ms": 120,
+        "server": "api-west-1",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "self": "/api/v2/products?category=audio",
+        "next": null
+      }
+    },
+    {
+      "status": "success",
+      "code": 200,
+      "request_id": "req_9876543214",
+      "data": {
+        "transaction_id": "txn_98765432",
+        "status": "completed",
+        "amount": 129.99,
+        "currency": "USD",
+        "payment_method": "credit_card",
+        "timestamp": "2025-04-10T15:42:18Z"
+      },
+      "meta": {
+        "processing_time_ms": 89,
+        "server": "api-east-4",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "self": "/api/v2/transactions/txn_98765432",
+        "receipt": "/api/v2/transactions/txn_98765432/receipt"
+      }
+    },
+    {
+      "status": "success",
+      "code": 200,
+      "request_id": "req_9876543215",
+      "data": {
+        "article_id": "art_56789",
+        "title": "Understanding Modern APIs",
+        "author": "Jane Smith",
+        "published_at": "2025-03-15T08:30:00Z",
+        "read_time_minutes": 12,
+        "tags": ["api", "rest", "programming"]
+      },
+      "meta": {
+        "processing_time_ms": 65,
+        "server": "api-west-2",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "self": "/api/v2/articles/art_56789",
+        "author": "/api/v2/users/usr_12345",
+        "related": "/api/v2/articles?tags=api"
+      }
+    },
+    {
+      "status": "error",
+      "code": 401,
+      "request_id": "req_9876543216",
+      "error": {
+        "message": "Unauthorized access",
+        "type": "authentication_error",
+        "details": "The provided API key is invalid or has expired"
+      },
+      "meta": {
+        "processing_time_ms": 32,
+        "server": "api-east-1",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "documentation": "/api/docs/authentication"
+      }
+    },
+    {
+      "status": "success",
+      "code": 200,
+      "request_id": "req_9876543217",
+      "data": {
+        "account_balance": 1250.75,
+        "currency": "USD",
+        "last_updated": "2025-04-16T12:30:45Z",
+        "available_credit": 5000.00
+      },
+      "meta": {
+        "processing_time_ms": 102,
+        "server": "api-west-3",
+        "version": "v2.3.4"
+      },
+      "links": {
+        "self": "/api/v2/accounts/acct_567890/balance",
+        "transactions": "/api/v2/accounts/acct_567890/transactions"
+      }
+    }
+]

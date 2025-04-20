@@ -1,0 +1,135 @@
+[
+    {
+      "event_id": "evt_abcdef123456",
+      "event_type": "user_login",
+      "timestamp": "2025-04-16T09:23:47Z",
+      "actor": "usr_12345",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+      "metadata": {
+        "login_method": "password",
+        "device_id": "dev_iphone12_6789",
+        "success": true
+      }
+    },
+    {
+      "event_id": "evt_abcdef123457",
+      "event_type": "file_upload",
+      "timestamp": "2025-04-16T10:15:22Z",
+      "actor": "usr_12345",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+      "metadata": {
+        "file_size_bytes": 2456789,
+        "file_type": "image/jpeg",
+        "file_id": "file_9876543"
+      }
+    },
+    {
+      "event_id": "evt_abcdef123458",
+      "event_type": "purchase_complete",
+      "timestamp": "2025-04-16T11:42:15Z",
+      "actor": "usr_12346",
+      "ip_address": "203.0.113.42",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "metadata": {
+        "order_id": "ord_45678",
+        "amount": 159.99,
+        "currency": "USD",
+        "items_count": 3
+      }
+    },
+    {
+      "event_id": "evt_abcdef123459",
+      "event_type": "user_login",
+      "timestamp": "2025-04-16T12:30:10Z",
+      "actor": "usr_12347",
+      "ip_address": "198.51.100.75",
+      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+      "metadata": {
+        "login_method": "sso",
+        "device_id": "dev_iphone13_1234",
+        "success": true
+      }
+    },
+    {
+      "event_id": "evt_abcdef123460",
+      "event_type": "account_update",
+      "timestamp": "2025-04-16T13:45:32Z",
+      "actor": "usr_12345",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+      "metadata": {
+        "field_changed": "email",
+        "previous_value": "old.email@example.com",
+        "new_value": "new.email@example.com"
+      }
+    },
+    {
+      "event_id": "evt_abcdef123461",
+      "event_type": "api_request",
+      "timestamp": "2025-04-16T14:22:18Z",
+      "actor": "api_key_98765",
+      "ip_address": "203.0.113.100",
+      "user_agent": "CustomApp/1.0",
+      "metadata": {
+        "endpoint": "/api/v2/users",
+        "method": "GET",
+        "response_time_ms": 235,
+        "status_code": 200
+      }
+    },
+    {
+      "event_id": "evt_abcdef123462",
+      "event_type": "user_logout",
+      "timestamp": "2025-04-16T15:10:45Z",
+      "actor": "usr_12347",
+      "ip_address": "198.51.100.75",
+      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)",
+      "metadata": {
+        "session_duration_seconds": 9635,
+        "reason": "user_initiated"
+      }
+    },
+    {
+      "event_id": "evt_abcdef123463",
+      "event_type": "payment_failed",
+      "timestamp": "2025-04-16T16:05:22Z",
+      "actor": "usr_12348",
+      "ip_address": "203.0.113.200",
+      "user_agent": "Mozilla/5.0 (Linux; Android 11)",
+      "metadata": {
+        "order_id": "ord_87654",
+        "amount": 299.99,
+        "currency": "USD",
+        "error_code": "card_declined"
+      }
+    },
+    {
+      "event_id": "evt_abcdef123464",
+      "event_type": "user_registration",
+      "timestamp": "2025-04-16T16:45:30Z",
+      "actor": "usr_12355",
+      "ip_address": "203.0.113.150",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "metadata": {
+        "referral_source": "search_engine",
+        "signup_method": "email",
+        "user_type": "free_tier"
+      }
+    },
+    {
+      "event_id": "evt_abcdef123465",
+      "event_type": "file_share",
+      "timestamp": "2025-04-16T17:30:12Z",
+      "actor": "usr_12346",
+      "ip_address": "203.0.113.42",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "metadata": {
+        "file_id": "file_123456",
+        "recipient_count": 3,
+        "permission_level": "view",
+        "expiry_date": "2025-04-23T17:30:12Z"
+      }
+    }
+  ] 

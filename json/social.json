@@ -1,0 +1,134 @@
+[
+    {
+      "relationship_id": "rel_12345",
+      "source_user": "usr_alice",
+      "target_user": "usr_bob",
+      "relationship_type": "follows",
+      "created_at": "2025-02-14T12:30:45Z",
+      "strength": 0.85,
+      "metadata": {
+        "notification_level": "all",
+        "visibility": "public",
+        "notes": "Met at DevCon 2024"
+      }
+    },
+    {
+      "relationship_id": "rel_12346",
+      "source_user": "usr_bob",
+      "target_user": "usr_alice",
+      "relationship_type": "follows",
+      "created_at": "2025-02-14T12:35:22Z",
+      "strength": 0.9,
+      "metadata": {
+        "notification_level": "all",
+        "visibility": "public",
+        "notes": "Colleague from DevCon"
+      }
+    },
+    {
+      "relationship_id": "rel_12347",
+      "source_user": "usr_charlie",
+      "target_user": "usr_alice",
+      "relationship_type": "follows",
+      "created_at": "2025-02-16T09:20:15Z",
+      "strength": 0.7,
+      "metadata": {
+        "notification_level": "important",
+        "visibility": "public",
+        "notes": ""
+      }
+    },
+    {
+      "relationship_id": "rel_12348",
+      "source_user": "usr_alice",
+      "target_user": "usr_david",
+      "relationship_type": "collaborator",
+      "created_at": "2025-03-01T15:40:30Z",
+      "strength": 0.95,
+      "metadata": {
+        "notification_level": "all",
+        "visibility": "connections_only",
+        "project_id": "proj_12345",
+        "notes": "Current project teammate"
+      }
+    },
+    {
+      "relationship_id": "rel_12349",
+      "source_user": "usr_david",
+      "target_user": "usr_alice",
+      "relationship_type": "collaborator",
+      "created_at": "2025-03-01T15:42:10Z",
+      "strength": 0.95,
+      "metadata": {
+        "notification_level": "all",
+        "visibility": "connections_only",
+        "project_id": "proj_12345",
+        "notes": "Project lead"
+      }
+    },
+    {
+      "relationship_id": "rel_12350",
+      "source_user": "usr_alice",
+      "target_user": "grp_design_team",
+      "relationship_type": "member",
+      "created_at": "2025-01-15T08:30:00Z",
+      "strength": 1.0,
+      "metadata": {
+        "notification_level": "all",
+        "visibility": "public",
+        "role": "contributor",
+        "joined_via": "invitation"
+      }
+    },
+    {
+      "relationship_id": "rel_12351",
+      "source_user": "usr_alice",
+      "target_user": "usr_emma",
+      "relationship_type": "blocks",
+      "created_at": "2025-03-10T09:15:30Z",
+      "strength": 1.0,
+      "metadata": {
+        "notification_level": "none",
+        "visibility": "private",
+        "notes": "Spam account"
+      }
+    },
+    {
+      "relationship_id": "rel_12352",
+      "source_user": "usr_frank",
+      "target_user": "usr_alice",
+      "relationship_type": "follows",
+      "created_at": "2025-03-15T16:22:45Z",
+      "strength": 0.5,
+      "metadata": {
+        "notification_level": "none",
+        "visibility": "public",
+        "notes": ""
+      }
+    },
+    {
+      "relationship_id": "rel_12353",
+      "source_user": "usr_alice",
+      "target_user": "cnt_blog_post_123",
+      "relationship_type": "authored",
+      "created_at": "2025-03-20T10:45:00Z",
+      "strength": 1.0,
+      "metadata": {
+        "visibility": "public",
+        "content_type": "blog_post",
+        "published": true
+      }
+    },
+    {
+      "relationship_id": "rel_12354",
+      "source_user": "usr_grace",
+      "target_user": "cnt_blog_post_123",
+      "relationship_type": "liked",
+      "created_at": "2025-03-20T14:30:22Z",
+      "strength": 0.8,
+      "metadata": {
+        "visibility": "public",
+        "recommendation": true
+      }
+    }
+  ]

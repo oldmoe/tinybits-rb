@@ -1,0 +1,181 @@
+[
+    {
+      "location_id": "loc_downtown_cafe",
+      "name": "Downtown Coffee Shop",
+      "coordinates": {
+        "latitude": 37.7749,
+        "longitude": -122.4194
+      },
+      "address": "123 Market St, San Francisco, CA",
+      "type": "cafe",
+      "polygon": [
+        {"lat": 37.7748, "lng": -122.4193},
+        {"lat": 37.7749, "lng": -122.4191},
+        {"lat": 37.7751, "lng": -122.4192},
+        {"lat": 37.7750, "lng": -122.4195},
+        {"lat": 37.7748, "lng": -122.4193}
+      ],
+      "elevation": 12.5
+    },
+    {
+      "location_id": "loc_central_park",
+      "name": "Central Park",
+      "coordinates": {
+        "latitude": 40.7829,
+        "longitude": -73.9654
+      },
+      "address": "Central Park, New York, NY",
+      "type": "park",
+      "polygon": [
+        {"lat": 40.7641, "lng": -73.9826},
+        {"lat": 40.8006, "lng": -73.9490},
+        {"lat": 40.7934, "lng": -73.9490},
+        {"lat": 40.7641, "lng": -73.9826}
+      ],
+      "elevation": 25.0
+    },
+    {
+      "location_id": "loc_eiffel_tower",
+      "name": "Eiffel Tower",
+      "coordinates": {
+        "latitude": 48.8584,
+        "longitude": 2.2945
+      },
+      "address": "Champ de Mars, 5 Avenue Anatole France, 75007 Paris",
+      "type": "landmark",
+      "polygon": [
+        {"lat": 48.8580, "lng": 2.2940},
+        {"lat": 48.8588, "lng": 2.2940},
+        {"lat": 48.8588, "lng": 2.2950},
+        {"lat": 48.8580, "lng": 2.2950},
+        {"lat": 48.8580, "lng": 2.2940}
+      ],
+      "elevation": 133.0
+    },
+    {
+      "location_id": "loc_sydney_opera",
+      "name": "Sydney Opera House",
+      "coordinates": {
+        "latitude": -33.8568,
+        "longitude": 151.2153
+      },
+      "address": "Bennelong Point, Sydney NSW 2000, Australia",
+      "type": "landmark",
+      "polygon": [
+        {"lat": -33.8575, "lng": 151.2140},
+        {"lat": -33.8565, "lng": 151.2140},
+        {"lat": -33.8560, "lng": 151.2160},
+        {"lat": -33.8575, "lng": 151.2170},
+        {"lat": -33.8575, "lng": 151.2140}
+      ],
+      "elevation": 5.0
+    },
+    {
+      "location_id": "loc_tokyo_station",
+      "name": "Tokyo Station",
+      "coordinates": {
+        "latitude": 35.6812,
+        "longitude": 139.7671
+      },
+      "address": "1 Chome Marunouchi, Chiyoda City, Tokyo, Japan",
+      "type": "transit_hub",
+      "polygon": [
+        {"lat": 35.6800, "lng": 139.7660},
+        {"lat": 35.6825, "lng": 139.7660},
+        {"lat": 35.6825, "lng": 139.7685},
+        {"lat": 35.6800, "lng": 139.7685},
+        {"lat": 35.6800, "lng": 139.7660}
+      ],
+      "elevation": 6.8
+    },
+    {
+      "location_id": "loc_grand_canyon",
+      "name": "Grand Canyon Visitor Center",
+      "coordinates": {
+        "latitude": 36.0580,
+        "longitude": -112.1430
+      },
+      "address": "Grand Canyon Visitor Center, Grand Canyon Village, AZ",
+      "type": "visitor_center",
+      "polygon": [
+        {"lat": 36.0575, "lng": -112.1435},
+        {"lat": 36.0585, "lng": -112.1435},
+        {"lat": 36.0585, "lng": -112.1425},
+        {"lat": 36.0575, "lng": -112.1425},
+        {"lat": 36.0575, "lng": -112.1435}
+      ],
+      "elevation": 2100.0
+    },
+    {
+      "location_id": "loc_taj_mahal",
+      "name": "Taj Mahal",
+      "coordinates": {
+        "latitude": 27.1751,
+        "longitude": 78.0421
+      },
+      "address": "Agra, Uttar Pradesh, India",
+      "type": "landmark",
+      "polygon": [
+        {"lat": 27.1740, "lng": 78.0410},
+        {"lat": 27.1760, "lng": 78.0410},
+        {"lat": 27.1760, "lng": 78.0430},
+        {"lat": 27.1740, "lng": 78.0430},
+        {"lat": 27.1740, "lng": 78.0410}
+      ],
+      "elevation": 171.0
+    },
+    {
+      "location_id": "loc_mount_everest",
+      "name": "Mount Everest Base Camp",
+      "coordinates": {
+        "latitude": 28.0025,
+        "longitude": 86.8550
+      },
+      "address": "Khumjung, Nepal",
+      "type": "natural_landmark",
+      "polygon": [
+        {"lat": 28.0020, "lng": 86.8545},
+        {"lat": 28.0030, "lng": 86.8545},
+        {"lat": 28.0030, "lng": 86.8555},
+        {"lat": 28.0020, "lng": 86.8555},
+        {"lat": 28.0020, "lng": 86.8545}
+      ],
+      "elevation": 5364.0
+    },
+    {
+      "location_id": "loc_airport_sfo",
+      "name": "San Francisco International Airport",
+      "coordinates": {
+        "latitude": 37.6213,
+        "longitude": -122.3790
+      },
+      "address": "San Francisco, CA 94128",
+      "type": "airport",
+      "polygon": [
+        {"lat": 37.6150, "lng": -122.3900},
+        {"lat": 37.6280, "lng": -122.3900},
+        {"lat": 37.6280, "lng": -122.3700},
+        {"lat": 37.6150, "lng": -122.3700},
+        {"lat": 37.6150, "lng": -122.3900}
+      ],
+      "elevation": 4.0
+    },
+    {
+      "location_id": "loc_great_barrier_reef",
+      "name": "Great Barrier Reef Viewing Point",
+      "coordinates": {
+        "latitude": -16.7505,
+        "longitude": 145.9700
+      },
+      "address": "Queensland, Australia",
+      "type": "natural_landmark",
+      "polygon": [
+        {"lat": -16.7510, "lng": 145.9695},
+        {"lat": -16.7500, "lng": 145.9695},
+        {"lat": -16.7500, "lng": 145.9705},
+        {"lat": -16.7510, "lng": 145.9705},
+        {"lat": -16.7510, "lng": 145.9695}
+      ],
+      "elevation": 0.0
+    }
+  ]
