@@ -16,7 +16,7 @@ The tinybits-rb gem strives to minimize overheads as well:
 - String interning for hash keys
 - Zero copy for deduplicated strings
 
-## Tinybits vs oother Ruby schemaless serializers
+## Tinybits vs other Ruby schemaless serializers
 |          | Avg encoded size (bytes) | Avg encoding time (us) | Avg decoding time (us) | Avg encoding memory (KB) | avg decoding memory (KB) |
 | -------- | ------------------------ | ---------------------- | ---------------------- | ------------------------ | ------------------------ |
 | Oj       | 3,096                    | 15.7                   | 39.6                   | 3.21                     | 11.13                    |
