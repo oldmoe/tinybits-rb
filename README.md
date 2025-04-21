@@ -1,3 +1,5 @@
+<img src="https://github.com/oldmoe/tinybits/blob/main/TinyBitsLogo.svg"/>
+
 # tinybits-rb
 
 A Ruby gem that wraps the tinybits packing/unpacking C library for space (both in memory and on disk) and time efficient encoding/decoding of JSON like structures
