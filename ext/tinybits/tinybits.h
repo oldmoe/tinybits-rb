@@ -1,6 +1,6 @@
 /**
  * TinyBits Amalgamated Header
- * Generated on: Sat Apr 19 07:05:26 PM CEST 2025
+ * Generated on: Sat May  3 09:20:46 PM CEST 2025
  */
 
 #ifndef TINY_BITS_H
@@ -8,43 +8,49 @@
 
 /* Begin common.h */
 
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h> // for size_t
 #include <math.h>
-
+#include <stdio.h>
 
 #define TB_HASH_SIZE 128
 #define TB_HASH_CACHE_SIZE 256
 #define MAX_BYTES 9
 #define TB_DDP_STR_LEN_MAX 128
 
-#define TB_INT_TAG 0x80
-#define TB_STR_TAG 0x40
-#define TB_STR_LEN 0x1F
-#define TB_REF_TAG 0x60
-#define TB_REF_LEN 0x1F
-#define TB_DBL_TAG 0x20
-#define TB_PFP_TAG 0x20
-#define TB_NFP_TAG 0x30
-#define TB_NAN_TAG 0x2D
-#define TB_INF_TAG 0x3D
-#define TB_NNF_TAG 0x2E
-#define TB_F16_TAG 0x3E
-#define TB_F32_TAG 0x2F
-#define TB_F64_TAG 0x3F
-#define TB_MAP_TAG 0x10
-#define TB_MAP_LEN 0x0F
-#define TB_ARR_TAG 0x08
-#define TB_ARR_LEN 0x07
-#define TB_SEP_TAG 0x05
-#define TB_EXT_TAG 0x04
-#define TB_BLB_TAG 0x03
-#define TB_NIL_TAG 0x02
-#define TB_TRU_TAG 0x01
-#define TB_FLS_TAG 0x00
+// main tags
+#define TB_INT_TAG 0x80     // +/- integer
+#define TB_REF_TAG 0x60     // deduped string
+#define TB_STR_TAG 0x40     // string
+#define TB_DBL_TAG 0x20     // double value
+#define TB_PFP_TAG 0x20     // + compressed double
+#define TB_NFP_TAG 0x30     // - compressed double
+#define TB_NAN_TAG 0x2D     // NaN
+#define TB_INF_TAG 0x3D     // Infinity
+#define TB_NNF_TAG 0x2E     // -Infinity
+#define TB_F16_TAG 0x3E     // f16 
+#define TB_F32_TAG 0x2F     // float (32bit)
+#define TB_F64_TAG 0x3F     // double (64bit)
+#define TB_MAP_TAG 0x10     // map { key: value}
+#define TB_ARR_TAG 0x08     // array [element1, element2]
+#define TB_DTM_TAG 0x07     // datetime
+#define TB_NXT_TAG 0x06     // native extensions (multibyte tags)
+#define TB_SEP_TAG 0x05     // separator (for group deduplication)
+#define TB_EXT_TAG 0x04     // extension (user extentions)
+#define TB_BLB_TAG 0x03     // blob
+#define TB_NIL_TAG 0x02     // NULL
+#define TB_TRU_TAG 0x01     // TRUE
+#define TB_FLS_TAG 0x00     // FALSE
+
+// Length values (for string, map & array)
+#define TB_STR_LEN 0x1F     // max embedded string length
+#define TB_REF_LEN 0x1F     // max embedded reference id
+#define TB_MAP_LEN 0x0F     // max embedded map length
+#define TB_ARR_LEN 0x07     // max embedded array length
+
+// native extensions TR_NXT_TAG
 
 // Feature flags (from encoder)
 #define TB_FEATURE_STRING_DEDUPE    0x01
@@ -358,6 +364,13 @@ static inline unsigned char *tiny_bits_packer_ensure_capacity(tiny_bits_packer *
     return encoder->buffer + encoder->current_pos;
 }
 
+/**
+ * @brief allocates and initializes a new packer
+ * 
+ * @return pointer to new packer instance
+ * 
+ * @note the returned packer object must be freed using tiny_bits_packer_destroy()
+ */
 tiny_bits_packer *tiny_bits_packer_create(size_t initial_capacity, uint8_t features) {
     tiny_bits_packer *encoder = (tiny_bits_packer *)malloc(sizeof(tiny_bits_packer));
     if (!encoder) return NULL;
@@ -393,6 +406,13 @@ tiny_bits_packer *tiny_bits_packer_create(size_t initial_capacity, uint8_t featu
     return encoder;
 }
 
+/**
+ * @brief Resets internal data structure of the packer object
+ * 
+ * @param encoder The packer instance
+ *
+ * @note This function allows for more efficient packing by reusing the same packer object
+ */
 inline void tiny_bits_packer_reset(tiny_bits_packer *encoder) {
     if (!encoder) return;
     encoder->current_pos = 0;  
@@ -404,6 +424,12 @@ inline void tiny_bits_packer_reset(tiny_bits_packer *encoder) {
     
 }
 
+/**
+ * @brief Deallocate the packer object and its internal data structures
+ * 
+ * @param encoder The unpacker instance
+ *
+ */
 void tiny_bits_packer_destroy(tiny_bits_packer *encoder) {
     if (!encoder) return;
     
@@ -414,6 +440,15 @@ void tiny_bits_packer_destroy(tiny_bits_packer *encoder) {
     free(encoder);
 }
 
+/**
+ * @brief Packs an array header into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @param arr_len Number of elements in the array
+ * @return Number of bytes written, or 0 on error
+ * 
+ * @note This function only writes the array header, not the elements themselves
+ */
 static inline int pack_arr(tiny_bits_packer *encoder, int arr_len){
     int written = 0;
     int needed_size;
@@ -439,6 +474,15 @@ static inline int pack_arr(tiny_bits_packer *encoder, int arr_len){
     return written;
 }
 
+/**
+ * @brief Packs a map header into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @param map_len Number of key-value pairs in the map
+ * @return Number of bytes written, or 0 on error
+ * 
+ * @note This function only writes the map header, not the key-value pairs themselves
+ */
 static inline int pack_map(tiny_bits_packer *encoder, int map_len){
     int written = 0;
     int needed_size;
@@ -464,6 +508,15 @@ static inline int pack_map(tiny_bits_packer *encoder, int map_len){
     return written;
 }
 
+/**
+ * @brief Packs an integer value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @param value The integer value to pack
+ * @return Number of bytes written, or 0 on error
+ * 
+ * @note Uses a compact representation for small values and SQLite4 like integer encoding for larger values
+ */
 static inline int pack_int(tiny_bits_packer *encoder, int64_t value){
     int written = 0;
     int needed_size = 10;
@@ -494,66 +547,95 @@ static inline int pack_int(tiny_bits_packer *encoder, int64_t value){
     return written;
 }
 
+static inline int _pack_tag_only(tiny_bits_packer *encoder, uint8_t tag){
+    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, 1);
+    if (!buffer) return 0; // Handle error
+    buffer[0] = tag;
+    encoder->current_pos += 1;
+    return 1;
+
+}
+
+/**
+ * @brief Packs a separator tag into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @return Number of bytes written, or 0 on error
+ */
+static inline int pack_separator(tiny_bits_packer *encoder){
+    return _pack_tag_only(encoder, (uint8_t)TB_SEP_TAG);
+}
+
+/**
+ * @brief Packs a NULL value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @return Number of bytes written, or 0 on error
+ */
 static inline int pack_null(tiny_bits_packer *encoder){
-    int needed_size = 1;
-    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, needed_size);
-    if (!buffer) return 0; // Handle error
-
-    buffer[0] = (uint8_t)TB_NIL_TAG;
-    encoder->current_pos += 1;
-    return 1;
+    return _pack_tag_only(encoder, (uint8_t)TB_NIL_TAG);
 }
 
+/**
+ * @brief Packs a TRUE boolean value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @return Number of bytes written, or 0 on error
+ */
 static inline int pack_true(tiny_bits_packer *encoder){
-    int needed_size = 1;
-    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, needed_size);
-    if (!buffer) return 0; // Handle error
-
-    buffer[0] = (uint8_t)TB_TRU_TAG;
-    encoder->current_pos += 1;
-    return 1;
+    return _pack_tag_only(encoder, (uint8_t)TB_TRU_TAG);
 }
 
+/**
+ * @brief Packs a FALSE boolean value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @return Number of bytes written, or 0 on error
+ */
 static inline int pack_false(tiny_bits_packer *encoder){
-    int needed_size = 1;
-    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, needed_size);
-    if (!buffer) return 0; // Handle error
-
-    buffer[0] = (uint8_t)TB_FLS_TAG;
-    encoder->current_pos += 1;
-    return 1;
+    return _pack_tag_only(encoder, (uint8_t)TB_FLS_TAG);
 }
 
+/**
+ * @brief Packs a NaN (Not a Number) value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @return Number of bytes written, or 0 on error
+ */
 static inline int pack_nan(tiny_bits_packer *encoder){
-    int needed_size = 1;
-    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, needed_size);
-    if (!buffer) return 0; // Handle error
-
-    buffer[0] = (uint8_t)TB_NAN_TAG;
-    encoder->current_pos += 1;
-    return 1;
+    return _pack_tag_only(encoder, (uint8_t)TB_NAN_TAG);
 }
 
+/**
+ * @brief Packs a positive infinity value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @return Number of bytes written, or 0 on error
+ */
 static inline int pack_infinity(tiny_bits_packer *encoder){
-    int needed_size = 1;
-    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, needed_size);
-    if (!buffer) return 0; // Handle error
-
-    buffer[0] = (uint8_t)TB_INF_TAG;
-    encoder->current_pos += 1;
-    return 1;
+    return _pack_tag_only(encoder, (uint8_t)TB_INF_TAG);
 }
 
+/**
+ * @brief Packs a negative infinity value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @return Number of bytes written, or 0 on error
+ */
 static inline int pack_negative_infinity(tiny_bits_packer *encoder){
-    int needed_size = 1;
-    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, needed_size);
-    if (!buffer) return 0; // Handle error
-
-    buffer[0] = (uint8_t)TB_NNF_TAG;
-    encoder->current_pos += 1;
-    return 1;
+    return _pack_tag_only(encoder, (uint8_t)TB_NNF_TAG);
 }
 
+/**
+ * @brief Packs a string into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @param str Pointer to the string data
+ * @param str_len Length of the string in bytes
+ * @return Number of bytes written, or 0 on error
+ * 
+ * @note If string deduplication is enabled, this may store a reference to a previously stored string
+ */
 static inline int pack_str(tiny_bits_packer *encoder, char* str, uint32_t str_len) {
     uint32_t id = 0;
     int found = 0;
@@ -632,10 +714,29 @@ static inline int pack_str(tiny_bits_packer *encoder, char* str, uint32_t str_le
     return written;
 }
 
+/**
+ * @brief Packs a double-precision floating point value into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @param val The double value to pack
+ * @return Number of bytes written, or 0 on error
+ * 
+ * @note If TB_FEATURE_COMPRESS_FLOATS is enabled, this will use a more compact representation for some values
+ */
 static inline int pack_double(tiny_bits_packer *encoder, double val) {
     int written = 0;
     uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, 10);
     if (!buffer) return 0;
+    if(isnan(val)){
+      return pack_nan(encoder);
+    } 
+    if(isinf(val)){
+      if(val > 0){
+        return pack_infinity(encoder);
+      } else {
+        return pack_negative_infinity(encoder);
+      }
+    }
     // scaled varint encoding
     if (encoder->features & TB_FEATURE_COMPRESS_FLOATS) {
         double abs_val = fabs(val); ///val >= 0 ? val : -val;
@@ -667,6 +768,37 @@ static inline int pack_double(tiny_bits_packer *encoder, double val) {
     return written;
 }
 
+/**
+ * @brief Packs a unixtime double-precision floating point value, along with a time zone offset into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @param val The unixtime double value to pack
+ * @param offset The timezone offset (as a +/- seconds)
+ * @return Number of bytes written, or 0 on error
+ * 
+ */
+static inline int pack_datetime(tiny_bits_packer *encoder, double val, int16_t offset) {
+    int written = 0;
+    uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, 11);
+    if (!buffer) return 0;
+    buffer[0] = TB_DTM_TAG;
+    buffer[1] = (int8_t) ((offset % 86400) / (60*15)); // convert seconds to multiples of 15 minutes
+    written += 2;
+    encode_uint64(dtoi_bits(val), buffer + written);
+    written += 8;
+    encoder->current_pos += written;
+    //written += pack_double(encoder, val);
+    return written;
+}
+
+/**
+ * @brief Packs a binary blob (byte array) into the buffer
+ * 
+ * @param encoder Pointer to the packer instance
+ * @param blob Pointer to the binary data
+ * @param blob_size Size of the binary data in bytes
+ * @return Number of bytes written, or 0 on error
+ */
 static inline int pack_blob(tiny_bits_packer *encoder, const char* blob, int blob_size){
     int written = 0;
     int needed_size;
@@ -697,19 +829,22 @@ enum tiny_bits_type {
     TINY_BITS_MAP,      // length: number of key-value pairs
     TINY_BITS_INT,      // int_val: integer value
     TINY_BITS_DOUBLE,   // double_val: double value
-    TINY_BITS_STR,      // length: byte length of string
-    TINY_BITS_BLOB,     // length: byte length of blob
+    TINY_BITS_STR,      // str_blob_val.length: byte length of string, str_blob_val.data: pointer to string
+    TINY_BITS_BLOB,     // str_blob_val.length: byte length of blob, str_blob_val.data: pointer to blob
     TINY_BITS_TRUE,     // No value
     TINY_BITS_FALSE,    // No value
     TINY_BITS_NULL,     // No value
-    TINY_BITS_NAN,     // No value
-    TINY_BITS_INF,     // No value
-    TINY_BITS_N_INF,     // No value
-    TINY_BITS_EXT,     // No value
+    TINY_BITS_NAN,      // No value
+    TINY_BITS_INF,      // No value
+    TINY_BITS_N_INF,    // No value
+    TINY_BITS_EXT,      // No value
+    TINY_BITS_SEP,      // No balue
     TINY_BITS_FINISHED, // End of buffer
-    TINY_BITS_ERROR     // Parsing error
+    TINY_BITS_ERROR,     // Parsing error
+    TINY_BITS_DATETIME   // double_val: double value
 };
 
+// value union
 typedef union tiny_bits_value {
     int64_t int_val;    // TINY_BITS_INT
     double double_val;  // TINY_BITS_DOUBLE
@@ -719,8 +854,13 @@ typedef union tiny_bits_value {
         size_t length;
         int32_t id;
     } str_blob_val;
+    struct {            // TINY_BITS_STR, TINY_BITS_BLOB
+        double unixtime;
+        size_t offset;
+    } datetime_val;   
 } tiny_bits_value;
 
+// The unpacker data structure
 typedef struct tiny_bits_unpacker {
     const unsigned char *buffer;  // Input buffer (read-only)
     size_t size;                  // Total size of buffer
@@ -734,6 +874,13 @@ typedef struct tiny_bits_unpacker {
     HashTable dictionary;
 } tiny_bits_unpacker;
 
+/**
+ * @brief allocates and initializes a new unpacker
+ * 
+ * @return pointer to new unpacker instance
+ * 
+ * @note the returned unpacker object must be freed using tiny_bits_unpacker_destroy()
+ */
 tiny_bits_unpacker *tiny_bits_unpacker_create(void) {
 
     tiny_bits_unpacker *decoder = (tiny_bits_unpacker *)malloc(sizeof(tiny_bits_unpacker));
@@ -749,7 +896,18 @@ tiny_bits_unpacker *tiny_bits_unpacker_create(void) {
     return decoder;
 }
 
-void tiny_bits_unpacker_set_buffer(tiny_bits_unpacker *decoder, const unsigned char *buffer, size_t size) {
+/**
+ * @breif Provides a buffer to the unpacker for unpacking
+ * 
+ * @param decoder The unpakcer instance
+ *
+ * @param buffer A pointer to the buffer
+ *
+ * @param size Size of the region to be unpacked
+ *
+ * @note This function implicitly resets the unpacker object so no need to call tiny_bits_unpacker_reset()
+ */
+static inline void tiny_bits_unpacker_set_buffer(tiny_bits_unpacker *decoder, const unsigned char *buffer, size_t size) {
     if (!decoder) return;
     if (!buffer || size < 1) return;
     decoder->buffer = buffer;
@@ -758,12 +916,26 @@ void tiny_bits_unpacker_set_buffer(tiny_bits_unpacker *decoder, const unsigned c
     decoder->strings_count = 0;
 }
 
+/**
+ * @brief Resets internal data structure of the unpacker object
+ * 
+ * @param decoder The unpacker instance
+ *
+ * @note This function is useful if you want to operate on the same buffer again for some reason
+ */
 static inline void tiny_bits_unpacker_reset(tiny_bits_unpacker *decoder) {
     if (!decoder) return;
     decoder->current_pos = 0;
     decoder->strings_count = 0;
 }
 
+
+/**
+ * @brief Deallocate the unpacker object and its internal data structures
+ * 
+ * @param decoder The unpacker instance
+ *
+ */
 void tiny_bits_unpacker_destroy(tiny_bits_unpacker *decoder) {
     if (!decoder) return;
     if (decoder->strings) {
@@ -833,6 +1005,19 @@ static inline enum tiny_bits_type _unpack_double(tiny_bits_unpacker *decoder, ui
         return TINY_BITS_DOUBLE;
 }
 
+static inline enum tiny_bits_type _unpack_datetime(tiny_bits_unpacker *decoder, uint8_t tag, tiny_bits_value *value){
+    size_t pos = decoder->current_pos;
+    value->datetime_val.offset = decoder->buffer[pos] * (60*15); // convert offset back to seconds (from multiples of 15 minutes)
+    //uint8_t dbl_tag = decoder->buffer[decoder->current_pos++];
+    //tiny_bits_value dbl_val;
+    //_unpack_double(decoder, dbl_tag, &dbl_val);
+    //value->datetime_val.unixtime = dbl_val.double_val;
+    uint64_t unixtime = decode_uint64(decoder->buffer + pos + 1);
+    value->datetime_val.unixtime = itod_bits(unixtime);
+    decoder->current_pos += 9;
+    return TINY_BITS_DATETIME;
+}
+
 static inline enum tiny_bits_type _unpack_blob(tiny_bits_unpacker *decoder, uint8_t tag, tiny_bits_value *value){
         size_t pos = decoder->current_pos;
         size_t len = decode_varint(decoder->buffer, decoder->size, &pos);
@@ -884,13 +1069,51 @@ static inline enum tiny_bits_type _unpack_str(tiny_bits_unpacker *decoder, uint8
         return TINY_BITS_STR;
 }
 
+/**
+ * @brief Unpacks a value and returns its type while setting its value
+ *
+ * @param decoder The unpacker instance
+ * @param[out] value A supplied tiny_bits_value instance
+ * 
+ * @return enum tiny_bits_type
+ *
+ * This is the entry point to unpacking tinybits structures. You keep calling
+ * this method repeatedly until it returns TINY_BITS_FINISHED when it reaches end of buffer
+ * or if it returns TINY_BITS_ERROR if it stumbles on a malformed or unknown structure.
+ *
+ * TINY_BITS_SEP means the current object was fully unpacked, and that there is potentially another one
+ * this is specifically for stream unpacking multiple objects one after the other as they are being recieved 
+ *
+ * The location of the value you need in the value union will depend on the returned type as follows
+ * 
+ * TINY_BITS_TRUE, TINY_BITS_FALSE, TINY_BITS_NULL, TINY_BITS_NAN, TINY_BITS_INF & TINY_BITS_N_INF all
+ * don't set the value, the type itself is sufficient information for client code to reconstruct the value.
+ *
+ * TINY_BITS_INT sets value.int_val
+ *
+ * TINY_BITS_DOUBLE sets value.double_val
+ *
+ * TINY_BITS_ARRAY and TINY_BITS_MAP both set value.length, for TINY_BITS_ARRAY it means the number of entries,
+ * for TINY_BITS_MAP it means the number of key/value pairs. You have to keep calling unpac_value() afterwards to 
+ * get all the members of the stored array/map. Please note that tinybits doesn't do size checks on the elements supplied
+ * during packing of arrays/maps. It is the responsibility of client code to ensure a 3 element array actually packs 3 elements.
+ * 
+ * TINY_BITS_STR & TINY_BITS_BLOB both set the value.str_blob_val struct, which has two members, data, a pointer to the string/blob in the buffer and
+ * length. Since some returned strings might be deduplicated, they will return the same data pointer and length value for their other instances, there is also an id
+ * value in the struct, which will be only set for strings. You can use to quickly determine the state of the strings as follows
+ * 
+ * A positive value means the string is a duplicate of a previous string, speficially a duplicate of the (id-1)th unpacked, deduplicatable string
+ * 
+ * A negative value means the sting is not a duplicate but is deduplicatable
+ *
+ * A zero value means the string is not deduplicatable and no duplicates should be expected (this is a heuristic, as duplicates may still exist)
+ */
 static inline enum tiny_bits_type unpack_value(tiny_bits_unpacker *decoder, tiny_bits_value *value) {
     if (!decoder || !value || decoder->current_pos >= decoder->size) {
         return (decoder && decoder->current_pos >= decoder->size) ? TINY_BITS_FINISHED : TINY_BITS_ERROR;
     }
 
     uint8_t tag = decoder->buffer[decoder->current_pos++];
-    //printf("found tag %X\n", tag);
     // Dispatch based on tag
     if ((tag & TB_INT_TAG) == TB_INT_TAG) { // Integers
         return _unpack_int(decoder, tag, value);
@@ -912,12 +1135,17 @@ static inline enum tiny_bits_type unpack_value(tiny_bits_unpacker *decoder, tiny
         return _unpack_arr(decoder, tag, value);
     } else if (tag == TB_BLB_TAG) { // Blob
         return _unpack_blob(decoder, tag, value);
+    } else if (tag == TB_DTM_TAG) {
+        return _unpack_datetime(decoder, tag, value);
+    } else if (tag == TB_SEP_TAG) {
+        return TINY_BITS_SEP;
+    } else if (tag == TB_EXT_TAG) {
+        return TINY_BITS_EXT;
     } else if (tag == TB_TRU_TAG) {
         return TINY_BITS_TRUE;
     } else if (tag == TB_FLS_TAG) {
         return TINY_BITS_FALSE;
     }
-    //printf("UNKOWN TAG\n");
     return TINY_BITS_ERROR; // Unknown tag
 }
 

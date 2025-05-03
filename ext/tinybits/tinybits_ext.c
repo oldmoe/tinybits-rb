@@ -127,6 +127,11 @@ static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj
             return pack_str(packer, RSTRING_PTR(str), RSTRING_LEN(str));
         }
         default:
+            if(rb_obj_is_kind_of(obj, rb_cTime)){
+                double unixtime = NUM2DBL(rb_funcall(obj, rb_intern("to_f"), 0));
+                return pack_datetime(packer, unixtime, FIX2INT(rb_time_utc_offset(obj)));    
+            }
+            //printf("Unsupported type encountered during packing: %s", rb_obj_classname(obj));
             rb_warn("Unsupported type encountered during packing: %s", rb_obj_classname(obj));
             return 0;
     }
@@ -160,6 +165,65 @@ static VALUE rb_pack(VALUE self, VALUE obj) {
     return result;
 }
 
+static VALUE rb_push(VALUE self, VALUE obj) {
+    PackerData* packer_data;
+    TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
+
+    if (!packer_data->packer) {
+        rb_raise(rb_eRuntimeError, "Packer not initialized");
+    }
+
+    size_t initial_pos = packer_data->packer->current_pos;
+
+    HashIterContext context;
+    context.packer = packer_data->packer;        // Pass the current packer
+    context.error_occurred = 0;   // Initialize error flag
+
+    
+    if(initial_pos > 0){
+       if(!pack_separator(packer_data->packer)){
+            rb_raise(rb_eRuntimeError, "Failed to pack object (multi-object packing error)");
+       } 
+    }
+    
+    // Call the optimized recursive function
+    if (!pack_ruby_object_recursive(packer_data->packer, obj, (VALUE)&context)) {
+        // Error occurred during packing (might be unsupported type or tiny_bits error)
+        rb_raise(rb_eRuntimeError, "Failed to pack object (unsupported type or packing error)");
+    }
+
+    return INT2FIX(packer_data->packer->current_pos - initial_pos);
+}
+
+static VALUE rb_to_s(VALUE self){
+    PackerData* packer_data;
+    TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
+
+    if (!packer_data->packer) {
+        rb_raise(rb_eRuntimeError, "Packer not initialized");
+    }
+
+    if(packer_data->packer->current_pos == 0){
+        return rb_str_new("", 0);
+    }
+    VALUE result = rb_str_new((const char*)packer_data->packer->buffer, packer_data->packer->current_pos);
+    rb_obj_freeze(result);
+    return result;
+}
+
+static VALUE rb_reset(VALUE self){
+    PackerData* packer_data;
+    TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
+
+
+    if (!packer_data->packer) {
+        rb_raise(rb_eRuntimeError, "Packer not initialized");
+    }
+
+    // Reset before packing (assuming this is efficient)
+    tiny_bits_packer_reset(packer_data->packer);
+    return self;
+}
 
 // Unpacker structure
 typedef struct {
@@ -271,10 +335,13 @@ static VALUE unpack_ruby_object(UnpackerData* unpacker_data, size_t interned) {
             return hash;
         }
         case TINY_BITS_BLOB:
-            // For simplicity, treat blobs as strings (similar to strings)
+            // For smplicity, treat blobs as strings (similar to strings)
             VALUE blob = rb_str_new(value.str_blob_val.data, value.str_blob_val.length);
             rb_obj_freeze(blob);
             return blob;
+        case TINY_BITS_DATETIME:
+            VALUE time = rb_time_num_new(DBL2NUM(value.datetime_val.unixtime), INT2FIX(((int16_t)value.datetime_val.offset)));
+            return time;
         default:
             return Qundef; // Error
     }
@@ -300,6 +367,61 @@ static VALUE rb_unpack(VALUE self, VALUE buffer) {
     return result;
 }
 
+static VALUE rb_set_buffer(VALUE self, VALUE buffer){
+    UnpackerData* unpacker_data;
+    TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
+
+    if (!unpacker_data->unpacker) {
+        rb_raise(rb_eRuntimeError, "Unpacker not initialized");
+    }
+
+    StringValue(buffer); // Ensure it's a string
+
+    tiny_bits_unpacker_set_buffer(unpacker_data->unpacker, (const unsigned char*)RSTRING_PTR(buffer), RSTRING_LEN(buffer));
+
+    // set the buffer as an instance variable to mainatin a reference to it
+    rb_iv_set(self, "@buffer", buffer);
+
+    return self;
+}
+
+static VALUE rb_pop(VALUE self) {
+
+    VALUE buffer = rb_iv_get(self, "@buffer");
+    if(buffer == Qnil){
+        rb_raise(rb_eRuntimeError, "No buffer is set");
+    }
+
+    UnpackerData* unpacker_data;
+    TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
+
+    if (!unpacker_data->unpacker) {
+        rb_raise(rb_eRuntimeError, "Unpacker not initialized");
+    }
+
+    tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
+    tiny_bits_value value;
+
+    if(unpacker->current_pos >= unpacker->size - 1){
+        return Qnil;
+    }
+    
+    if(unpacker->current_pos > 0){
+        enum tiny_bits_type type = unpack_value(unpacker, &value);
+        if(type != TINY_BITS_SEP){
+            rb_raise(rb_eRuntimeError, "Malformed multi-object buffer");
+        }
+    }
+    
+    VALUE result = unpack_ruby_object(unpacker_data, 0);
+    if (result == Qundef) {
+        rb_raise(rb_eRuntimeError, "Failed to unpack data");
+    }
+
+    return result;
+}
+
+
 void Init_tinybits_ext(void) {
     rb_mTinyBits = rb_define_module("TinyBits");
     rb_cPacker = rb_define_class_under(rb_mTinyBits, "Packer", rb_cObject);
@@ -308,8 +430,18 @@ void Init_tinybits_ext(void) {
     rb_define_alloc_func(rb_cPacker, rb_packer_alloc);
     rb_define_method(rb_cPacker, "initialize", rb_packer_init, 0);
     rb_define_method(rb_cPacker, "pack", rb_pack, 1);
+    rb_define_alias(rb_cPacker, "encode", "pack");
+    rb_define_alias(rb_cPacker, "dump", "pack");
+    rb_define_method(rb_cPacker, "push", rb_push, 1);
+    rb_define_alias(rb_cPacker, "<<", "push");
+    rb_define_method(rb_cPacker, "to_s", rb_to_s, 0);
+    rb_define_method(rb_cPacker, "reset", rb_reset, 0);
 
     rb_define_alloc_func(rb_cUnpacker, rb_unpacker_alloc);
     rb_define_method(rb_cUnpacker, "initialize", rb_unpacker_init, 0);
     rb_define_method(rb_cUnpacker, "unpack", rb_unpack, 1);
+    rb_define_alias(rb_cUnpacker, "load", "unpack");
+    rb_define_alias(rb_cUnpacker, "decode", "unpack");
+    rb_define_method(rb_cUnpacker, "buffer=", rb_set_buffer, 1);
+    rb_define_method(rb_cUnpacker, "pop", rb_pop, 0);
 }
