@@ -16,6 +16,17 @@ The tinybits-rb gem strives to minimize overheads as well:
 - String interning for hash keys
 - Zero copy for deduplicated strings
 
+### Tinybits supports serailizing from/to the following Ruby data type
+- NUMBER (integer or float, up to 64bit values)
+- String
+- Symbol
+- Hash
+- Array
+- True
+- False
+- Nil
+- Time
+
 ## Tinybits vs other Ruby schemaless serializers
 |          | Avg encoded size (bytes) | Avg encoding time (us) | Avg decoding time (us) | Avg encoding memory (KB) | avg decoding memory (KB) |
 | -------- | ------------------------ | ---------------------- | ---------------------- | ------------------------ | ------------------------ |
@@ -27,6 +38,8 @@ The tinybits-rb gem strives to minimize overheads as well:
 
 
 ## Usage
+
+You can use the default packer and unpacker interfaces:
 ```ruby
 require 'tinybits'
 
@@ -45,6 +58,44 @@ puts packed.bytesize # => 76
 unpacker = TinyBits::Unpacker.new
 unpacked = unpacker.unpack(packed)
 puts unpacked == doc # => true
+```
+Optionally you can use the more convenient, but slower, interface
+```ruby
+require 'tinybits'
+
+doc = {
+  "lib" => "tinybits",
+  "ver" => 0.1,
+  "authors" => ["Mohamed", "Hamza", "Zain"],
+  "rb_authors" => ["Mohamed", "Zain"],
+  "py_authors" => ["Mohamed", "Hamza"]
+}
+
+pakced = TinyBits.pack(doc)
+puts packed.bytesize # => 76
+
+unpacked = TinyBits.unpack(packed)
+puts unpacked == doc # => true
+```
+You can also use the `push` and `pop` methods to incrementally encode and decode groups of object that all share the same deduplicated string set
+```ruby
+require 'tinybits'
+
+packer = TinyBits::Packer.new
+unpacker = TinyBits::Unpacker.new
+
+objects = [{"abc": 123}, {"abc": [1, 2, "abc"]}, ["xyz", "abc", "xyz", 7.6] ]
+objects.each do |obj|
+  packer << obj
+end
+
+buffer = packer.to_s
+
+unpacker.buffer = buffer
+
+while(res = unpacker.pop)
+  pp res
+end
 ```
 
 ## Installation
