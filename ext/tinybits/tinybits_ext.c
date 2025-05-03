@@ -421,6 +421,26 @@ static VALUE rb_pop(VALUE self) {
     return result;
 }
 
+static VALUE rb_finished(VALUE self){
+    VALUE buffer = rb_iv_get(self, "@buffer");
+    if(buffer == Qnil){
+        rb_raise(rb_eRuntimeError, "No buffer is set");
+    }
+    UnpackerData* unpacker_data;
+    TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
+
+    if (!unpacker_data->unpacker) {
+        rb_raise(rb_eRuntimeError, "Unpacker not initialized");
+    }
+
+    tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
+
+    if(unpacker->current_pos >= (unpacker->size - 1)){
+        return Qtrue;
+    }
+
+    return Qfalse;
+}
 
 void Init_tinybits_ext(void) {
     rb_mTinyBits = rb_define_module("TinyBits");
@@ -444,4 +464,5 @@ void Init_tinybits_ext(void) {
     rb_define_alias(rb_cUnpacker, "decode", "unpack");
     rb_define_method(rb_cUnpacker, "buffer=", rb_set_buffer, 1);
     rb_define_method(rb_cUnpacker, "pop", rb_pop, 0);
+    rb_define_method(rb_cUnpacker, "finished?", rb_finished, 0);
 }
