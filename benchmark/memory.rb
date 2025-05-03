@@ -64,7 +64,7 @@ docs.each_pair do |doc, data|
   puts "------------------------------------"
   Benchmark.memory do |x|
     encoders.each_pair do |title, encoder|
-      x.report(title) { 5000.times{encoder.call(data)} }
+      x.report(title) { 1000.times{encoder.call(data)} }
     end
   end
   puts
@@ -73,11 +73,6 @@ docs.each_pair do |doc, data|
   Benchmark.memory do |x|
     decoders.each_pair do |title, decoder|
       packed = encoded[title][doc]
-      #unpacked  = decoder.call(packed)
-      #puts "#{unpacked}"
-      #packed = encoders[title].call(["abc", "string", "nameds" , "hamada", {"named" => "hamada"}, "str2", {"order" => true}, 7])
-      #unpacked  = decoder.call(packed)
-      #puts "#{unpacked}"
       x.report(title) { 1000.times{decoder.call(packed)} }
     end
     x.compare!
