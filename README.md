@@ -26,9 +26,17 @@ The tinybits-rb gem strives to minimize overheads as well:
 - False
 - Nil
 - Time
+- Any object that responds to `to_tinybits`
+
+### Tinybits supports packing multiple objects into the same buffer
+- Objects can be added discretely, they don't need to be provided all at once
+- All objects will share the same deduplication dictionary
+- Works great if you are generating objects and want to append them to an exisiting buffer
+
+The unpacking process will need to have access to the whole buffer though, for deduplication
 
 ## Tinybits vs other Ruby schemaless serializers
-This is the average of the json documents stored in the json folder in this repo
+This is the average of the 11 different json documents stored in the json folder in this repo
 |          | Avg encoded size (bytes) | Avg encoding time (us) | Avg decoding time (us) | Avg encoding memory (KB) | avg decoding memory (KB) |
 | -------- | ------------------------ | ---------------------- | ---------------------- | ------------------------ | ------------------------ |
 | Oj       | 3,096                    | 15.7                   | 39.6                   | 3.21                     | 11.13                    |
@@ -37,6 +45,11 @@ This is the average of the json documents stored in the json folder in this repo
 | Msgpack  | 2,639                    | 8.1                    | 28.2                   | 2.74                     | 10.50                    |
 | TinyBits | **1,458**                | **7.4**                | **17.9**               | **1.53**                 | **9.62**                 |
 
+From these results (based on this specific data set)  we can deduce the following:
+- TinyBits produces packed data that is ~45% smaller than the second smallest format (CBOR).
+- TinyBits packs data at a ~9% faster rate than the second fastest encoder (Msgpack)
+- TinyBits unpacks data at a ~27% faster rate than the second fastest decoder (Ruby's stdlib JSON)
+- TinyBits uses the least amount of memory of all the encoders/decoders tested
 
 ## Usage
 
