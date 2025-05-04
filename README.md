@@ -28,6 +28,7 @@ The tinybits-rb gem strives to minimize overheads as well:
 - Time
 
 ## Tinybits vs other Ruby schemaless serializers
+This is the average of the json documents stored in the json folder in this repo
 |          | Avg encoded size (bytes) | Avg encoding time (us) | Avg decoding time (us) | Avg encoding memory (KB) | avg decoding memory (KB) |
 | -------- | ------------------------ | ---------------------- | ---------------------- | ------------------------ | ------------------------ |
 | Oj       | 3,096                    | 15.7                   | 39.6                   | 3.21                     | 11.13                    |
