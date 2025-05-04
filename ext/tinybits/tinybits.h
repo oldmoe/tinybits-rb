@@ -1,6 +1,6 @@
 /**
  * TinyBits Amalgamated Header
- * Generated on: Sun May  4 03:12:10 AM CEST 2025
+ * Generated on: Sun May  4 05:43:30 PM CEST 2025
  */
 
 #ifndef TINY_BITS_H
@@ -89,8 +89,11 @@ typedef struct HashTable {
 
 static inline uint32_t fast_hash_32(const char* str, uint16_t len) {
     uint32_t hash = len;
-    hash = (hash << 16) | (((unsigned char)str[0] << 8) | (unsigned char)str[1]);
-    hash ^= (((unsigned char)str[len-2] << 24) | ((unsigned char)str[len-1] << 16));
+    hash = (hash << 24) | 
+           ((unsigned char)str[0] << 16) | 
+           ((unsigned char)str[1] << 8 ) | 
+           ((unsigned char)str[len-1]);
+    //hash ^= (((unsigned char)str[len-2] << 24) | ((unsigned char)str[len-1] << 16));
     return hash;
 }
 
@@ -652,7 +655,7 @@ static inline int pack_str(tiny_bits_packer *encoder, char* str, uint32_t str_le
             HashEntry entry = encoder->encode_table.cache[index - 1];
             if (hash_code == entry.hash 
                 && str_len == entry.length
-                && (str_len <= 4 || (fast_memcmp(str, encoder->buffer + entry.offset, str_len) == 0) )) {
+                && fast_memcmp(str, encoder->buffer + entry.offset, str_len) == 0 ) {
                 id = index - 1;
                 found = 1;
                 break;
