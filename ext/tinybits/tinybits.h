@@ -1,6 +1,6 @@
 /**
  * TinyBits Amalgamated Header
- * Generated on: Sat May  3 09:20:46 PM CEST 2025
+ * Generated on: Sun May  4 03:12:10 AM CEST 2025
  */
 
 #ifndef TINY_BITS_H
@@ -90,7 +90,7 @@ typedef struct HashTable {
 static inline uint32_t fast_hash_32(const char* str, uint16_t len) {
     uint32_t hash = len;
     hash = (hash << 16) | (((unsigned char)str[0] << 8) | (unsigned char)str[1]);
-    hash ^= (((unsigned char)str[len-2] << 8) | (unsigned char)str[len-1]);
+    hash ^= (((unsigned char)str[len-2] << 24) | ((unsigned char)str[len-1] << 16));
     return hash;
 }
 
@@ -1052,7 +1052,7 @@ static inline enum tiny_bits_type _unpack_str(tiny_bits_unpacker *decoder, uint8
         }
         value->str_blob_val.id = 0;
         // Handle new string (not deduplicated)
-        if(decoder->strings_count < TB_HASH_CACHE_SIZE){
+        if(decoder->strings_count < TB_HASH_CACHE_SIZE && len >= 2 && len <= 128){
             if (decoder->strings_count >= decoder->strings_size) {
                 size_t new_size = decoder->strings_size * 2;
                 void *new_strings = realloc(decoder->strings, new_size * sizeof(*decoder->strings));
