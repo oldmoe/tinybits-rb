@@ -100,15 +100,20 @@ unpacker = TinyBits::Unpacker.new
 
 objects = [{"abc": 123}, {"abc": [1, 2, "abc"]}, ["xyz", "abc", "xyz", 7.6] ]
 objects.each do |obj|
+  # append objects to the buffer
   packer << obj
 end
 
 buffer = packer.to_s
 
+# at this point, if you want to reuse the packer for a fresh set of objects you need to reset it
+packer.reset
+
+# set the buffer such that the unpacker can process it
 unpacker.buffer = buffer
 
-while(res = unpacker.pop)
-  pp res
+while(!unpacker.finished?)
+  pp unpacker.pop
 end
 ```
 
