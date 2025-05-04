@@ -4,8 +4,23 @@
 #include "tinybits.h"
 
 // Ruby module and classes
+/*
+ * Document-module: TinyBits
+ *
+ * A Ruby extension for fast binary serialization and deserialization of Ruby objects.
+ */
 VALUE rb_mTinyBits;
+/*
+ * Document-class: TinyBits::Packer
+ *
+ * The Packer class handles serialization of Ruby objects to the TinyBits binary format.
+ */
 VALUE rb_cPacker;
+/*
+ * Document-class: TinyBits::Unpacker
+ *
+ * The Unpacker class handles deserialization of TinyBits binary format to Ruby objects.
+ */
 VALUE rb_cUnpacker;
 
 // Forward declarations
@@ -75,6 +90,13 @@ static VALUE rb_packer_alloc(VALUE klass) {
     return TypedData_Wrap_Struct(klass, &packer_data_type, packer_data);
 }
 
+/* 
+ * Document-method: initialize
+ *
+ * Initializes a new Packer object
+ *
+ * @return [Packer] The initialized packer object.
+ */
 static VALUE rb_packer_init(VALUE self) {
     PackerData* packer_data;
     TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
@@ -141,7 +163,17 @@ static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj
     }
 }
 
-// keeps the public API the same.
+/*
+ * Document-method: pack
+ * 
+ * Packs a Ruby object into a binary string.
+ * Supports Ruby types: String, Array, Hash, Integer, Float, nil, true, false, Symbol, and Time.
+ * Objects can implement a `to_tinybits` method to provide custom serialization.
+ *
+ * @param obj [Object] The Ruby object to pack.
+ * @return [String] The packed binary string (frozen).
+ * @raise [RuntimeError] If packing fails due to unsupported types or other errors.
+ */
 static VALUE rb_pack(VALUE self, VALUE obj) {
     PackerData* packer_data;
     TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
@@ -169,6 +201,16 @@ static VALUE rb_pack(VALUE self, VALUE obj) {
     return result;
 }
 
+/*
+ * Document-method: push
+ *
+ * Appends a packed object to the current buffer.
+ * Inserts a separator when appending to non-empty buffer.
+ *
+ * @param obj [Object] The Ruby object to append.
+ * @return [Integer] The number of bytes added to the buffer.
+ * @raise [RuntimeError] If packing fails.
+ */
 static VALUE rb_push(VALUE self, VALUE obj) {
     PackerData* packer_data;
     TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
@@ -199,6 +241,13 @@ static VALUE rb_push(VALUE self, VALUE obj) {
     return INT2FIX(packer_data->packer->current_pos - initial_pos);
 }
 
+/*
+ * Document-method: to_s
+ *
+ * Returns the current packed buffer as a string.
+ *
+ * @return [String] The current packed buffer contents (frozen).
+ */
 static VALUE rb_to_s(VALUE self){
     PackerData* packer_data;
     TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
