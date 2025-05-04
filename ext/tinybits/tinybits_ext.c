@@ -131,6 +131,10 @@ static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj
                 double unixtime = NUM2DBL(rb_funcall(obj, rb_intern("to_f"), 0));
                 return pack_datetime(packer, unixtime, FIX2INT(rb_time_utc_offset(obj)));    
             }
+            if(rb_respond_to(obj, rb_intern("to_tinybits"))){
+                VALUE custom_obj = rb_funcall(obj, rb_intern("to_tinybits"), 0);
+                return pack_ruby_object_recursive(packer, custom_obj, context);
+            }
             //printf("Unsupported type encountered during packing: %s", rb_obj_classname(obj));
             rb_warn("Unsupported type encountered during packing: %s", rb_obj_classname(obj));
             return 0;
