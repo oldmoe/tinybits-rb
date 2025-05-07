@@ -2,7 +2,7 @@
 
 ### Data sizes in bytes
 
-| Size Raw    | media.json | social.json | time.json | search.json | api.json | users/json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
+| Size Raw    | media.json | social.json | time.json | search.json | api.json | users.json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
 | ----------- | ---------- | ----------- | --------- | ----------- | -------- | ---------- | ----------------- | ----------- | ----------- | --------------- | -------------- |
 | Oj          | 3,005       | 2,604        | 2,653      | 3,825        | 2,996     | 2,896       | 2,575              | 2,762        | 2,959        | 3,627            | 4,153           |
 | JSON        | 3,005       | 2,604        | 2,653      | 3,825        | 2,996     | 2,896       | 2,575              | 2,762        | 2,959        | 3,627            | 4,153           |
@@ -12,7 +12,7 @@
 
 ### Encoding Rate (documents/sec)
 
-| Encoding    | media.json | social.json | time.json | search.json | api.json | users/json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
+| Encoding    | media.json | social.json | time.json | search.json | api.json | users.json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
 | ----------- | ---------- | ----------- | --------- | ----------- | -------- | ---------- | ----------------- | ----------- | ----------- | --------------- | -------------- |
 | Oj          | 86,993      | 95,437       | 38,635     | 53,130       | 78,890    | 68,131      | 67,437             | 73,945       | 82,138       | 16,452           | 41,400          |
 | JSON        | 109,039     | 102,479      | 37,040     | 62,820       | 91,719    | 84,072      | 73,791             | 93,755       | 93,074       | 14,383           | 50,471          |
@@ -22,7 +22,7 @@
 
 ### Decoding Rate (documents/sec)
 
-| Decoding    | media.json | social.json | time.json | search.json | api.json | users/json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
+| Decoding    | media.json | social.json | time.json | search.json | api.json | users.json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
 | ----------- | ---------- | ----------- | --------- | ----------- | -------- | ---------- | ----------------- | ----------- | ----------- | --------------- | -------------- |
 | Oj          | 27,541      | 38,007       | 31,906     | 21,302       | 23,911    | 22,187      | 24,692             | 24,659       | 28,805       | 15,505           | 19,572          |
 | JSON        | 45,772      | 60,202       | 49,585     | 33,151       | 33,937    | 37,867      | 41,077             | 44,092       | 40,616       | 25,555           | 34,640          |
@@ -32,7 +32,7 @@
 
 ### Encoding Memory Usage in MB
 
-| Encoding    | media.json | social.json | time.json | search.json | api.json | users/json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
+| Encoding    | media.json | social.json | time.json | search.json | api.json | users.json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
 | ----------- | ---------- | ----------- | --------- | ----------- | -------- | ---------- | ----------------- | ----------- | ----------- | --------------- | -------------- |
 | Oj          | 15.2       | 13.2        | 13.5      | 19.3        | 15.2     | 14.7       | 13.1              | 14.0        | 15.0        | 18.3            | 21.0           |
 | JSON        | 15.2       | 15.2        | 27.9      | 22.1        | 16.4     | 14.7       | 15.1              | 14.0        | 15.4        | 43.9            | 25.0           |
@@ -42,7 +42,7 @@
 
 ### Decoding Memory Usage in MB
 
-| Decoding    | media.json | social.json | time.json | search.json | api.json | users/json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
+| Decoding    | media.json | social.json | time.json | search.json | api.json | users.json | transactions.json | config.json | events.json | geospatial.json | telemetry.json |
 | ----------- | ---------- | ----------- | --------- | ----------- | -------- | ---------- | ----------------- | ----------- | ----------- | --------------- | -------------- |
 | Oj          | 73.2       | 36.6        | 44.0      | 71.6        | 50.2     | 51.8       | 56.8              | 45.2        | 41.0        | 79.4            | 48.2           |
 | JSON        | 64.4       | 36.2        | 41.6      | 65.8        | 49.4     | 51.4       | 54.0              | 44.8        | 40.6        | 73.0            | 45.4           |
