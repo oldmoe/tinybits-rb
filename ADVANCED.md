@@ -93,6 +93,8 @@ You can also do one off packing and unpacking with a dictionary by passing the d
   
   # to unpack, you do the same as with packing, supply the dictionary
   unpacked = TinyBits.unpack(dpacked, dict)
+
+  pp unpacked # =>  { "first_name" => "Adam", "last_name" => "Anwar", "grade" => 3.7, "birth_date" => "2010-01-01", "mother_tongue" => "Arabic", "gender" => "male" }
 ```
 
 
