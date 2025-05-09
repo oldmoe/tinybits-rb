@@ -76,8 +76,8 @@ You can also do one off packing and unpacking with a dictionary by passing the d
     "birth_date",
     "mother_tongue",
     "gender",
-    "male", "
-    female",
+    "male",
+    "female",
     "Arabic",
     "English",
     "French",
