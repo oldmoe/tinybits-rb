@@ -15,6 +15,7 @@ module TinyBits
     def reset
       @packer.reset
       @dict_set = false
+      self
     end
 
     # packs an object to a binary string using the stored dictionary
@@ -33,10 +34,12 @@ module TinyBits
     # @raise [RuntimeError] If packing fails due to unsupported types or other errors.
     def <<(object)
       if !@dict_set
+        #@packer.reset
         @dict_size = @packer << @dict
         @dict_set = true                
       end
-      @packer << object
+      res = @packer << object
+      res
     end
 
     # return the packed buffer

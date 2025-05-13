@@ -264,6 +264,13 @@ static VALUE rb_to_s(VALUE self){
     return result;
 }
 
+/*
+ * Document-method: reset
+ *
+ * Resets the packer's buffer to empty.
+ *
+ * @return [Packer] self
+ */
 static VALUE rb_reset(VALUE self){
     PackerData* packer_data;
     TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
@@ -312,6 +319,13 @@ static VALUE rb_unpacker_alloc(VALUE klass) {
     return TypedData_Wrap_Struct(klass, &unpacker_data_type, unpacker_data);
 }
 
+/*
+ * Document-method: initialize
+ *
+ * Initializes a new Unpacker.
+ *
+ * @return [Unpacker] The initialized unpacker object.
+ */
 static VALUE rb_unpacker_init(VALUE self) {
     UnpackerData* unpacker_data;
     TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
@@ -400,6 +414,15 @@ static VALUE unpack_ruby_object(UnpackerData* unpacker_data, size_t interned) {
     }
 }
 
+/*
+ * Document-method: unpack
+ *
+ * Unpacks a binary string into a Ruby object.
+ *
+ * @param buffer [String] The binary string to unpack.
+ * @return [Object] The unpacked Ruby object.
+ * @raise [RuntimeError] If unpacking fails.
+ */
 static VALUE rb_unpack(VALUE self, VALUE buffer) {
     UnpackerData* unpacker_data;
     TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
@@ -420,6 +443,15 @@ static VALUE rb_unpack(VALUE self, VALUE buffer) {
     return result;
 }
 
+/*
+ * Document-method: buffer=
+ *
+ * Sets the buffer for incremental unpacking.
+ *
+ * @param buffer [String] The binary buffer to unpack incrementally.
+ * @return [Unpacker] self
+ * @note Stores a reference to the buffer internally.
+ */
 static VALUE rb_set_buffer(VALUE self, VALUE buffer){
     UnpackerData* unpacker_data;
     TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
@@ -438,6 +470,15 @@ static VALUE rb_set_buffer(VALUE self, VALUE buffer){
     return self;
 }
 
+/*
+ * Document-method: pop
+ *
+ * Extracts the next object from the buffer.
+ *
+ * @return [Object, nil] The next unpacked object or nil if buffer is exhausted.
+ * @raise [RuntimeError] If no buffer is set or if unpacking fails.
+ * @note Requires #buffer= to be called first.
+ */
 static VALUE rb_pop(VALUE self) {
 
     VALUE buffer = rb_iv_get(self, "@buffer");
@@ -474,6 +515,15 @@ static VALUE rb_pop(VALUE self) {
     return result;
 }
 
+/*
+ * Document-method: finished?
+ *
+ * Checks if the buffer has been fully consumed.
+ *
+ * @return [Boolean] true if there are no more objects to unpack.
+ * @raise [RuntimeError] If no buffer is set.
+ * @note Requires #buffer= to be called first.
+ */
 static VALUE rb_finished(VALUE self){
     VALUE buffer = rb_iv_get(self, "@buffer");
     if(buffer == Qnil){
