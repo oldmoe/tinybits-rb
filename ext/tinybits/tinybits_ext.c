@@ -225,13 +225,13 @@ static VALUE rb_push(VALUE self, VALUE obj) {
     context.packer = packer_data->packer;        // Pass the current packer
     context.error_occurred = 0;   // Initialize error flag
 
-    
+    /*
     if(initial_pos > 0){
        if(!pack_separator(packer_data->packer)){
             rb_raise(rb_eRuntimeError, "Failed to pack object (multi-object packing error)");
        } 
     }
-    
+    */
     // Call the optimized recursive function
     if (!pack_ruby_object_recursive(packer_data->packer, obj, (VALUE)&context)) {
         // Error occurred during packing (might be unsupported type or tiny_bits error)
@@ -335,6 +335,8 @@ static VALUE rb_unpacker_init(VALUE self) {
         rb_raise(rb_eRuntimeError, "Failed to initialize unpacker");
     }
     unpacker_data->strings_index = 0;
+    VALUE strings = rb_ary_new_capa(TB_HASH_CACHE_SIZE);
+    rb_iv_set(self, "@strings_cache", strings);
     return self;
 }
 
@@ -352,6 +354,7 @@ static inline VALUE rb_unpack_str(UnpackerData* unpacker_data, tiny_bits_value v
         }
         if(id < 0){
             unpacker_data->ruby_strings[abs(id)-1] = str;
+            unpacker_data->strings_index++;
         }
         return str;
     }            
@@ -440,6 +443,9 @@ static VALUE rb_unpack(VALUE self, VALUE buffer) {
         rb_raise(rb_eRuntimeError, "Failed to unpack data");
     }
 
+    for(size_t i = 0; i < unpacker_data->strings_index; i++) {
+        //rb_gc_unregister_address(&(unpacker_data->ruby_strings[i]));
+    }
     return result;
 }
 
@@ -494,22 +500,30 @@ static VALUE rb_pop(VALUE self) {
     }
 
     tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
-    tiny_bits_value value;
+    //tiny_bits_value value;
 
     if(unpacker->current_pos >= unpacker->size - 1){
         return Qnil;
     }
     
+    /*
     if(unpacker->current_pos > 0){
         enum tiny_bits_type type = unpack_value(unpacker, &value);
         if(type != TINY_BITS_SEP){
             rb_raise(rb_eRuntimeError, "Malformed multi-object buffer");
         }
     }
-    
+    */
+
     VALUE result = unpack_ruby_object(unpacker_data, 0);
     if (result == Qundef) {
         rb_raise(rb_eRuntimeError, "Failed to unpack data");
+    }
+
+    if(unpacker->current_pos >= (unpacker->size - 1)){
+        for(size_t i = 0; i < unpacker_data->strings_index; i++) {
+            //rb_gc_unregister_address(&(unpacker_data->ruby_strings[i]));
+        }
     }
 
     return result;
