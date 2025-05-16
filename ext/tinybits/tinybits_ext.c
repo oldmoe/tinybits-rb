@@ -288,8 +288,8 @@ static VALUE rb_reset(VALUE self){
 // Unpacker structure
 typedef struct {
     tiny_bits_unpacker* unpacker;
-    size_t strings_index;
-    VALUE ruby_strings[TB_HASH_CACHE_SIZE];
+    //size_t strings_index;
+    //VALUE ruby_strings[TB_HASH_CACHE_SIZE];
 } UnpackerData;
 
 static void unpacker_free(void* data) {
@@ -297,9 +297,9 @@ static void unpacker_free(void* data) {
     if (unpacker_data->unpacker) {
         tiny_bits_unpacker_destroy(unpacker_data->unpacker);
     }
-    for (size_t i = 0; i < TB_HASH_CACHE_SIZE; i++) {
-        unpacker_data->ruby_strings[i] = Qnil;
-    }
+    //for (size_t i = 0; i < TB_HASH_CACHE_SIZE; i++) {
+        //unpacker_data->ruby_strings[i] = Qnil;
+    //}
     free(unpacker_data);
 }
 
@@ -334,16 +334,15 @@ static VALUE rb_unpacker_init(VALUE self) {
     if (!unpacker_data->unpacker) {
         rb_raise(rb_eRuntimeError, "Failed to initialize unpacker");
     }
-    unpacker_data->strings_index = 0;
     VALUE strings = rb_ary_new_capa(TB_HASH_CACHE_SIZE);
-    rb_iv_set(self, "@strings_cache", strings);
+    rb_iv_set(self, "@strings", strings);
     return self;
 }
 
-static inline VALUE rb_unpack_str(UnpackerData* unpacker_data, tiny_bits_value value, size_t interned){
+static inline VALUE rb_unpack_str(VALUE strings, UnpackerData* unpacker_data, tiny_bits_value value, size_t interned){
     int32_t id  = value.str_blob_val.id;
     if(id > 0)
-        return unpacker_data->ruby_strings[id-1];
+        return rb_ary_entry(strings, id-1);
     else if(id <= 0){
         VALUE str;
         if(interned > 0){
@@ -353,15 +352,14 @@ static inline VALUE rb_unpack_str(UnpackerData* unpacker_data, tiny_bits_value v
             rb_obj_freeze(str);
         }
         if(id < 0){
-            unpacker_data->ruby_strings[abs(id)-1] = str;
-            unpacker_data->strings_index++;
+            rb_ary_push(strings, str);
         }
         return str;
     }            
     return Qundef;
 }
 
-static VALUE unpack_ruby_object(UnpackerData* unpacker_data, size_t interned) {
+static VALUE unpack_ruby_object(VALUE strings, UnpackerData* unpacker_data, size_t interned) {
     tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
     tiny_bits_value value;
     enum tiny_bits_type type = unpack_value(unpacker, &value);
@@ -372,7 +370,7 @@ static VALUE unpack_ruby_object(UnpackerData* unpacker_data, size_t interned) {
 
     switch (type) {
         case TINY_BITS_STR: {        
-            return rb_unpack_str(unpacker_data, value, interned);    
+            return rb_unpack_str(strings, unpacker_data, value, interned);    
         }
         case TINY_BITS_DOUBLE:
             return DBL2NUM(value.double_val);
@@ -387,7 +385,7 @@ static VALUE unpack_ruby_object(UnpackerData* unpacker_data, size_t interned) {
         case TINY_BITS_ARRAY: {
             VALUE arr = rb_ary_new_capa(value.length);
             for (size_t i = 0; i < value.length; i++) {
-                VALUE element = unpack_ruby_object(unpacker_data, 0);
+                VALUE element = unpack_ruby_object(strings, unpacker_data, 0);
                 if (element == Qundef) return Qundef; // Error
                 rb_ary_push(arr, element);
             }
@@ -396,9 +394,9 @@ static VALUE unpack_ruby_object(UnpackerData* unpacker_data, size_t interned) {
         case TINY_BITS_MAP: {
             VALUE hash = rb_hash_new_capa(value.length);
             for (size_t i = 0; i < value.length; i++) {  
-                VALUE key = unpack_ruby_object(unpacker_data, 1);
+                VALUE key = unpack_ruby_object(strings, unpacker_data, 0);
                 if (key == Qundef) return Qundef; // Error
-                VALUE val = unpack_ruby_object(unpacker_data, 0);
+                VALUE val = unpack_ruby_object(strings, unpacker_data, 0);
                 if (val == Qundef) return Qundef; // Error
                 rb_hash_aset(hash, key, val);
             }
@@ -438,14 +436,15 @@ static VALUE rb_unpack(VALUE self, VALUE buffer) {
 
     tiny_bits_unpacker_set_buffer(unpacker_data->unpacker, (const unsigned char*)RSTRING_PTR(buffer), RSTRING_LEN(buffer));
 
-    VALUE result = unpack_ruby_object(unpacker_data, 0);
+    VALUE array = rb_iv_get(self, "@strings");
+    VALUE result = unpack_ruby_object(array, unpacker_data, 0);
+
     if (result == Qundef) {
         rb_raise(rb_eRuntimeError, "Failed to unpack data");
     }
 
-    for(size_t i = 0; i < unpacker_data->strings_index; i++) {
-        //rb_gc_unregister_address(&(unpacker_data->ruby_strings[i]));
-    }
+    rb_ary_clear(array);
+
     return result;
 }
 
@@ -472,7 +471,8 @@ static VALUE rb_set_buffer(VALUE self, VALUE buffer){
 
     // set the buffer as an instance variable to mainatin a reference to it
     rb_iv_set(self, "@buffer", buffer);
-
+    VALUE array = rb_iv_get(self, "@strings");
+    rb_ary_clear(array);
     return self;
 }
 
@@ -488,6 +488,8 @@ static VALUE rb_set_buffer(VALUE self, VALUE buffer){
 static VALUE rb_pop(VALUE self) {
 
     VALUE buffer = rb_iv_get(self, "@buffer");
+    VALUE array = rb_iv_get(self, "@strings");
+    
     if(buffer == Qnil){
         rb_raise(rb_eRuntimeError, "No buffer is set");
     }
@@ -500,30 +502,19 @@ static VALUE rb_pop(VALUE self) {
     }
 
     tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
-    //tiny_bits_value value;
 
     if(unpacker->current_pos >= unpacker->size - 1){
+        rb_ary_clear(array);
         return Qnil;
     }
-    
-    /*
-    if(unpacker->current_pos > 0){
-        enum tiny_bits_type type = unpack_value(unpacker, &value);
-        if(type != TINY_BITS_SEP){
-            rb_raise(rb_eRuntimeError, "Malformed multi-object buffer");
-        }
-    }
-    */
 
-    VALUE result = unpack_ruby_object(unpacker_data, 0);
+    VALUE result = unpack_ruby_object(array, unpacker_data, 0);
     if (result == Qundef) {
         rb_raise(rb_eRuntimeError, "Failed to unpack data");
     }
 
     if(unpacker->current_pos >= (unpacker->size - 1)){
-        for(size_t i = 0; i < unpacker_data->strings_index; i++) {
-            //rb_gc_unregister_address(&(unpacker_data->ruby_strings[i]));
-        }
+        rb_ary_clear(array);
     }
 
     return result;

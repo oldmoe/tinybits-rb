@@ -46,7 +46,11 @@ module TinyBits
     # @return [String] The packed buffer (minus the dictionary).
     def to_s
       res = @packer.to_s
-      res[@dict_size, res.bytesize - @dict_size]
+      if @dict_set
+        res[@dict_size, res.bytesize - @dict_size]
+      else
+        res
+      end
     end
 
   end
