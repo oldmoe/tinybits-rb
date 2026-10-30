@@ -17,8 +17,8 @@ The tinybits-rb gem strives to minimize overheads as well:
 - Zero copy for deduplicated strings
 
 ### Tinybits supports serailizing from/to the following Ruby data type
-- NUMBER (integer or float, up to 64bit values)
-- String
+- NUMBER: integers up to 64 bits, and floats (NaN and Infinity included)
+- String (binary strings, `Encoding::BINARY`, are packed as blobs and unpack as binary)
 - Symbol
 - Hash
 - Array
@@ -90,6 +90,14 @@ puts packed.bytesize # => 76
 
 unpacked = TinyBits.unpack(packed)
 puts unpacked == doc # => true
+```
+Hash keys can unpack as symbols, with `symbolize_keys: true` (values stay strings):
+```ruby
+require 'tinybits'
+
+packed = TinyBits.pack({ "id" => 1, "name" => "tinybits" })
+TinyBits::Unpacker.new(symbolize_keys: true).unpack(packed) # => {id: 1, name: "tinybits"}
+TinyBits.unpack(packed, symbolize_keys: true)               # => {id: 1, name: "tinybits"}
 ```
 You can also use the `push` and `pop` methods to incrementally encode and decode groups of object that all share the same deduplicated string set
 ```ruby
