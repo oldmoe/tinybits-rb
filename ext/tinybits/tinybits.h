@@ -1129,9 +1129,10 @@ static inline enum tiny_bits_type _unpack_str(tiny_bits_unpacker *decoder, uint8
             if(read == 0) return TINY_BITS_ERROR;
             len += 31;
             if(pos + read + len > decoder->size) return TINY_BITS_ERROR;
-            value->str_blob_val.data =  (const char *)decoder->buffer + pos;
-            value->str_blob_val.length = len; 
             decoder->current_pos += (read + len);
+            pos += read;
+            value->str_blob_val.data =  (const char *)decoder->buffer + pos;
+            value->str_blob_val.length = len;
         } else { // Deduplicated (small: < 0x7F, large: 0x7F)
             size_t id;
             size_t read;

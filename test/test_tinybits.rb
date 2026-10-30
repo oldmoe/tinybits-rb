@@ -20,7 +20,7 @@ class TinyBitsTest < Minitest::Test
     
     test_data.each do |value|
       packed = @packer.pack(value)
-      assert_equal value, @unpacker.unpack(packed)
+      value.nil? ? assert_nil(@unpacker.unpack(packed)) : assert_equal(value, @unpacker.unpack(packed))
     end
   end
 
@@ -30,6 +30,13 @@ class TinyBitsTest < Minitest::Test
     strings.each do |str|
       packed = @packer.pack(str)
       assert_equal str, @unpacker.unpack(packed)
+    end
+  end
+
+  def test_string_length_boundaries
+    [30, 31, 32, 127, 128, 129, 159, 160, 16_415, 16_416, 70_000].each do |n|
+      str = "x" * (n - 1) + "!"
+      assert_equal [str, str, 7], @unpacker.unpack(@packer.pack([str, str, 7])), "length #{n}"
     end
   end
 
@@ -163,6 +170,34 @@ class TinyBitsTest < Minitest::Test
     
     assert_equal "first", @unpacker.pop
     assert_equal 42, @unpacker.pop
+  end
+
+  def test_dictionary_roundtrip
+    dict = ["status", "headers", "body"]
+    [42, "a long body " * 10, { "status" => 200, "headers" => { "body" => "x" } }].each do |obj|
+      assert_equal obj, TinyBits.unpack(TinyBits.pack(obj, dict), dict)
+    end
+    dpacker = TinyBits::DPacker.new(dict)
+    dpacker << "status"
+    dpacker << 7
+    dunpacker = TinyBits::DUnpacker.new(dict)
+    dunpacker.buffer = dpacker.to_s
+    assert_equal ["status", 7], [dunpacker.pop, dunpacker.pop]
+    assert dunpacker.finished?
+  end
+
+  def test_pop_single_byte_last_object
+    [42, nil, true, false, "ab"].each do |last|
+      packer = TinyBits::Packer.new
+      packer << "ab"
+      packer << last
+      @unpacker.buffer = packer.to_s
+
+      assert_equal "ab", @unpacker.pop
+      refute @unpacker.finished?, "finished? before #{last.inspect}"
+      last.nil? ? assert_nil(@unpacker.pop) : assert_equal(last, @unpacker.pop)
+      assert @unpacker.finished?
+    end
   end
 
   def test_method_aliases

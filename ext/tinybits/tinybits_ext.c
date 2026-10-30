@@ -503,7 +503,7 @@ static VALUE rb_pop(VALUE self) {
 
     tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
 
-    if(unpacker->current_pos >= unpacker->size - 1){
+    if(unpacker->current_pos >= unpacker->size){
         rb_ary_clear(array);
         return Qnil;
     }
@@ -513,7 +513,7 @@ static VALUE rb_pop(VALUE self) {
         rb_raise(rb_eRuntimeError, "Failed to unpack data");
     }
 
-    if(unpacker->current_pos >= (unpacker->size - 1)){
+    if(unpacker->current_pos >= unpacker->size){
         rb_ary_clear(array);
     }
 
@@ -543,7 +543,7 @@ static VALUE rb_finished(VALUE self){
 
     tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
 
-    if(unpacker->current_pos >= (unpacker->size - 1)){
+    if(unpacker->current_pos >= unpacker->size){
         return Qtrue;
     }
 
