@@ -20,15 +20,16 @@ module TinyBits
 
   # unpacks an object from a binary string
   # @param buffer [String] The Ruby string holding the packed buffer.
+  # @param symbolize_keys [Boolean] unpack hash keys that are strings as symbols.
   # @return [Object] The unpacked Ruby Object (all strings within the object will be frozen).
   # @raise [RuntimeError] If unpacking fails due to unsupported types or malformed data.
   # this is a convinience interface, a better way is to instantiate a TinyBits::Unpacker
   # object and use its #unpack method
-  def self.unpack(buffer, dict = nil)
+  def self.unpack(buffer, dict = nil, symbolize_keys: false)
     if dict
-      DUnpacker.new(dict).unpack(buffer)
+      DUnpacker.new(dict, symbolize_keys: symbolize_keys).unpack(buffer)
     else
-      Unpacker.new.unpack(buffer)
+      Unpacker.new(symbolize_keys: symbolize_keys).unpack(buffer)
     end
   end
 end

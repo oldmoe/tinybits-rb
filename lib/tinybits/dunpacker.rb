@@ -2,9 +2,11 @@ module TinyBits
 
   class DUnpacker
     
-    def initialize(dict)
+    # @param dict [[String]] the dictionary the packer used (order is significant).
+    # @param symbolize_keys [Boolean] unpack hash keys that are strings as symbols.
+    def initialize(dict, symbolize_keys: false)
       @dict = Packer.new.pack(dict.collect{|a| a.to_s })
-      @unpacker = Unpacker.new
+      @unpacker = Unpacker.new(symbolize_keys: symbolize_keys)
       @dict_popped = false
     end
 

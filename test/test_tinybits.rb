@@ -272,9 +272,36 @@ class TinyBitsTest < Minitest::Test
     assert_raises(RuntimeError) do
       @unpacker.pop  # Should raise error when no buffer is set
     end
-    
+
     assert_raises(RuntimeError) do
       @unpacker.finished?  # Should raise error when no buffer is set
     end
+  end
+
+  def test_symbolize_keys
+    data = [{ id: 1, "name" => "x", nested: { list: [{ k: 1 }] } }, { 7 => "int key" }]
+    packed = @packer.pack(data)
+    assert_equal [{ "id" => 1, "name" => "x", "nested" => { "list" => [{ "k" => 1 }] } }, { 7 => "int key" }],
+                 @unpacker.unpack(packed)
+    symbolizer = TinyBits::Unpacker.new(symbolize_keys: true)
+    assert_equal [{ id: 1, name: "x", nested: { list: [{ k: 1 }] } }, { 7 => "int key" }], symbolizer.unpack(packed)
+    # repeated keys come back as deduplicated strings first, then as the same symbol
+    rows = Array.new(5) { |i| { id: i, randomNumber: i * 2 } }
+    assert_equal rows, symbolizer.unpack(@packer.pack(rows))
+    # values stay strings
+    assert_equal({ s: "v" }, symbolizer.unpack(@packer.pack({ s: "v" })))
+  end
+
+  def test_symbolize_keys_with_pop_and_dictionary
+    symbolizer = TinyBits::Unpacker.new(symbolize_keys: true)
+    packer = TinyBits::Packer.new
+    packer << { a: 1 }
+    packer << { b: 2 }
+    symbolizer.buffer = packer.to_s
+    assert_equal [{ a: 1 }, { b: 2 }], [symbolizer.pop, symbolizer.pop]
+    dict = ["status", "body"]
+    obj = { "status" => 200, "body" => "ok" }
+    assert_equal({ status: 200, body: "ok" }, TinyBits.unpack(TinyBits.pack(obj, dict), dict, symbolize_keys: true))
+    assert_equal({ status: 200, body: "ok" }, TinyBits.unpack(TinyBits.pack(obj), symbolize_keys: true))
   end
 end

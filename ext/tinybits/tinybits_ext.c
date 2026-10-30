@@ -27,7 +27,7 @@ VALUE rb_cUnpacker;
 static VALUE rb_packer_alloc(VALUE klass);
 static VALUE rb_packer_init(VALUE self);
 static VALUE rb_unpacker_alloc(VALUE klass);
-static VALUE rb_unpacker_init(VALUE self);
+static VALUE rb_unpacker_init(int argc, VALUE* argv, VALUE self);
 static VALUE rb_pack(VALUE self, VALUE obj);
 static VALUE rb_unpack(VALUE self, VALUE buffer);
 
@@ -288,6 +288,7 @@ static VALUE rb_reset(VALUE self){
 // Unpacker structure
 typedef struct {
     tiny_bits_unpacker* unpacker;
+    int symbolize_keys; // map keys that are strings come back as symbols
     //size_t strings_index;
     //VALUE ruby_strings[TB_HASH_CACHE_SIZE];
 } UnpackerData;
@@ -316,6 +317,7 @@ static const rb_data_type_t unpacker_data_type = {
 static VALUE rb_unpacker_alloc(VALUE klass) {
     UnpackerData* unpacker_data = ALLOC(UnpackerData);
     unpacker_data->unpacker = NULL;
+    unpacker_data->symbolize_keys = 0;
     return TypedData_Wrap_Struct(klass, &unpacker_data_type, unpacker_data);
 }
 
@@ -324,11 +326,18 @@ static VALUE rb_unpacker_alloc(VALUE klass) {
  *
  * Initializes a new Unpacker.
  *
+ * @param symbolize_keys [Boolean] unpack hash keys that are strings as symbols (default false)
  * @return [Unpacker] The initialized unpacker object.
  */
-static VALUE rb_unpacker_init(VALUE self) {
+static VALUE rb_unpacker_init(int argc, VALUE* argv, VALUE self) {
     UnpackerData* unpacker_data;
     TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
+
+    VALUE opts = Qnil;
+    rb_scan_args(argc, argv, ":", &opts);
+    if (!NIL_P(opts)) {
+        unpacker_data->symbolize_keys = RTEST(rb_hash_lookup(opts, ID2SYM(rb_intern("symbolize_keys"))));
+    }
 
     unpacker_data->unpacker = tiny_bits_unpacker_create();
     if (!unpacker_data->unpacker) {
@@ -396,6 +405,7 @@ static VALUE unpack_ruby_object(VALUE strings, UnpackerData* unpacker_data, size
             for (size_t i = 0; i < value.length; i++) {  
                 VALUE key = unpack_ruby_object(strings, unpacker_data, 0);
                 if (key == Qundef) return Qundef; // Error
+                if (unpacker_data->symbolize_keys && RB_TYPE_P(key, T_STRING)) key = rb_str_intern(key);
                 VALUE val = unpack_ruby_object(strings, unpacker_data, 0);
                 if (val == Qundef) return Qundef; // Error
                 rb_hash_aset(hash, key, val);
@@ -566,7 +576,7 @@ void Init_tinybits_ext(void) {
     rb_define_method(rb_cPacker, "reset", rb_reset, 0);
 
     rb_define_alloc_func(rb_cUnpacker, rb_unpacker_alloc);
-    rb_define_method(rb_cUnpacker, "initialize", rb_unpacker_init, 0);
+    rb_define_method(rb_cUnpacker, "initialize", rb_unpacker_init, -1);
     rb_define_method(rb_cUnpacker, "unpack", rb_unpack, 1);
     rb_define_alias(rb_cUnpacker, "load", "unpack");
     rb_define_alias(rb_cUnpacker, "decode", "unpack");
