@@ -112,6 +112,8 @@ static VALUE rb_packer_init(VALUE self) {
 static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj, VALUE context) {
     switch (TYPE(obj)) {
         case T_STRING: {
+            if (ENCODING_GET_INLINED(obj) == rb_ascii8bit_encindex())
+                return pack_blob(packer, RSTRING_PTR(obj), RSTRING_LEN(obj));
             return pack_str(packer, RSTRING_PTR(obj), RSTRING_LEN(obj));
         }
         case T_HASH: {
@@ -133,6 +135,14 @@ static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj
         case T_FIXNUM: {
             int64_t val = NUM2LONG(obj); // Assumes fits in int64_t
             return pack_int(packer, val);
+        }
+        case T_BIGNUM: {
+            // within int64: a Bignum only past the Fixnum range (2**62)
+            if (rb_absint_numwords(obj, 63, NULL) > 1) {
+                rb_warn("Integer out of the int64 range encountered during packing");
+                return 0;
+            }
+            return pack_int(packer, (int64_t)NUM2LL(obj));
         }
         case T_FLOAT: {
             double val = NUM2DBL(obj);
@@ -385,6 +395,12 @@ static VALUE unpack_ruby_object(VALUE strings, UnpackerData* unpacker_data, size
             return DBL2NUM(value.double_val);
         case TINY_BITS_INT:
             return LONG2NUM(value.int_val);
+        case TINY_BITS_NAN:
+            return DBL2NUM(NAN);
+        case TINY_BITS_INF:
+            return DBL2NUM(INFINITY);
+        case TINY_BITS_N_INF:
+            return DBL2NUM(-INFINITY);
         case TINY_BITS_NULL:
             return Qnil;
         case TINY_BITS_TRUE:

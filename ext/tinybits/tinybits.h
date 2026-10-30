@@ -1108,7 +1108,7 @@ static inline enum tiny_bits_type _unpack_blob(tiny_bits_unpacker *decoder, uint
         read = decode_varint(decoder->buffer, decoder->size, pos, &len);
         if(read == 0) return TINY_BITS_ERROR;
         if((pos + read + len) > decoder->size) return TINY_BITS_ERROR; 
-        value->str_blob_val.data =  (const char *)decoder->buffer + pos;
+        value->str_blob_val.data =  (const char *)decoder->buffer + pos + read;
         value->str_blob_val.length = len; 
         decoder->current_pos = pos + read + len;
         return TINY_BITS_BLOB;

@@ -292,6 +292,29 @@ class TinyBitsTest < Minitest::Test
     assert_equal({ s: "v" }, symbolizer.unpack(@packer.pack({ s: "v" })))
   end
 
+  def test_int64_range
+    [2**62 - 1, 2**62, 2**63 - 1, -(2**62), -(2**62) - 1, -(2**63) + 1].each do |n|
+      assert_equal [n, n], @unpacker.unpack(@packer.pack([n, n])), n.to_s
+    end
+    assert_raises(RuntimeError) { TinyBits::Packer.new.pack(2**63) }
+  end
+
+  def test_binary_strings_round_trip_as_binary
+    blob = "\xFF\x00abc".b
+    out = @unpacker.unpack(@packer.pack(["text", blob, { k: blob }]))
+    assert_equal ["text", blob, { "k" => blob }], out
+    assert_equal Encoding::BINARY, out[1].encoding
+    assert_equal Encoding::UTF_8, out[0].encoding
+    assert_equal Encoding::BINARY, @unpacker.unpack(@packer.pack("".b)).encoding
+  end
+
+  def test_nan_and_infinity
+    nan, inf, ninf = @unpacker.unpack(@packer.pack([Float::NAN, Float::INFINITY, -Float::INFINITY]))
+    assert nan.nan?
+    assert_equal Float::INFINITY, inf
+    assert_equal(-Float::INFINITY, ninf)
+  end
+
   def test_symbolize_keys_with_pop_and_dictionary
     symbolizer = TinyBits::Unpacker.new(symbolize_keys: true)
     packer = TinyBits::Packer.new
