@@ -326,23 +326,59 @@ static VALUE rb_reset(VALUE self){
     return self;
 }
 
+#define KEY_CACHE_CAPA 63
+#define KEY_CACHE_MAX_MISSES 1024
+
 // Unpacker structure
 typedef struct {
     tiny_bits_unpacker* unpacker;
     int symbolize_keys; // map keys that are strings come back as symbols
     VALUE strings;      // Ruby strings by dedupe id, dictionary strings first
     VALUE buffer;       // the buffer set by #buffer=, kept alive while popping
+    int keys_count;
+    int keys_misses;    // misses while the cache is full
+    VALUE keys[KEY_CACHE_CAPA]; // interned map keys sorted by (length, bytes), kept across unpacks
 } UnpackerData;
 
 static void unpacker_mark(void* data) {
     UnpackerData* unpacker_data = (UnpackerData*)data;
     rb_gc_mark_movable(unpacker_data->strings);
     rb_gc_mark(unpacker_data->buffer); // pinned, the C unpacker points into it (embedded strings move)
+    for (int i = 0; i < unpacker_data->keys_count; i++) rb_gc_mark_movable(unpacker_data->keys[i]);
 }
 
 static void unpacker_compact(void* data) {
     UnpackerData* unpacker_data = (UnpackerData*)data;
     unpacker_data->strings = rb_gc_location(unpacker_data->strings);
+    for (int i = 0; i < unpacker_data->keys_count; i++) unpacker_data->keys[i] = rb_gc_location(unpacker_data->keys[i]);
+}
+
+// Map keys repeat across unpacks, a small sorted cache saves the global fstring table lookup
+// (same approach as the json gem's name cache, but persistent; when full, misses are not
+// inserted, and after KEY_CACHE_MAX_MISSES of them it restarts empty to follow new keys)
+static inline VALUE key_cache_fetch(UnpackerData* unpacker_data, const char* str, long length) {
+    if (length < 2 || length > 128) // same range as string dedupe
+        return rb_enc_interned_str(str, length, rb_utf8_encoding());
+    VALUE* keys = unpacker_data->keys;
+    int low = 0, high = unpacker_data->keys_count - 1;
+    while (low <= high) {
+        int mid = (low + high) >> 1;
+        long cmp = length - RSTRING_LEN(keys[mid]);
+        if (cmp == 0) cmp = memcmp(str, RSTRING_PTR(keys[mid]), length);
+        if (cmp == 0) return keys[mid];
+        if (cmp > 0) low = mid + 1; else high = mid - 1;
+    }
+    VALUE key = rb_enc_interned_str(str, length, rb_utf8_encoding());
+    if (unpacker_data->keys_count == KEY_CACHE_CAPA) {
+        if (++unpacker_data->keys_misses < KEY_CACHE_MAX_MISSES) return key;
+        unpacker_data->keys_misses = 0;
+        unpacker_data->keys_count = 0;
+        low = 0;
+    }
+    MEMMOVE(&keys[low + 1], &keys[low], VALUE, unpacker_data->keys_count - low);
+    keys[low] = key;
+    unpacker_data->keys_count++;
+    return key;
 }
 
 static void unpacker_free(void* data) {
@@ -369,6 +405,8 @@ static VALUE rb_unpacker_alloc(VALUE klass) {
     unpacker_data->symbolize_keys = 0;
     unpacker_data->strings = Qnil;
     unpacker_data->buffer = Qnil;
+    unpacker_data->keys_count = 0;
+    unpacker_data->keys_misses = 0;
     return TypedData_Wrap_Struct(klass, &unpacker_data_type, unpacker_data);
 }
 
@@ -421,7 +459,7 @@ static inline VALUE rb_unpack_str(VALUE strings, UnpackerData* unpacker_data, ti
     else if(id <= 0){
         VALUE str;
         if(interned > 0){
-            str = rb_enc_interned_str(value.str_blob_val.data, value.str_blob_val.length, rb_utf8_encoding());
+            str = key_cache_fetch(unpacker_data, value.str_blob_val.data, value.str_blob_val.length);
         } else {
             str = rb_utf8_str_new(value.str_blob_val.data, value.str_blob_val.length);
             rb_obj_freeze(str);
@@ -464,6 +502,14 @@ static VALUE unpack_ruby_object(VALUE strings, UnpackerData* unpacker_data, size
         case TINY_BITS_FALSE:
             return Qfalse;
         case TINY_BITS_ARRAY: {
+            if (value.length <= 16) { // small arrays are created in one call
+                VALUE items[16];
+                for (size_t i = 0; i < value.length; i++) {
+                    items[i] = unpack_ruby_object(strings, unpacker_data, 0);
+                    if (items[i] == Qundef) return Qundef; // Error
+                }
+                return rb_ary_new_from_values(value.length, items);
+            }
             VALUE arr = rb_ary_new_capa(value.length);
             for (size_t i = 0; i < value.length; i++) {
                 VALUE element = unpack_ruby_object(strings, unpacker_data, 0);

@@ -261,6 +261,17 @@ class TinyBitsTest < Minitest::Test
     assert_equal "two", @unpacker.pop
   end
 
+  def test_key_cache_across_unpacks
+    objs = 200.times.map { |i| { "id" => i, "name#{i % 100}" => "x", "1numeric" => i } } # 100+ keys overflow the cache
+    2.times do
+      objs.each { |o| assert_equal o, @unpacker.unpack(@packer.pack(o)) }
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+    end
+    key = @unpacker.unpack(@packer.pack({ "id" => 1 })).keys.first
+    assert key.frozen?
+    assert_same key, @unpacker.unpack(@packer.pack({ "id" => 2 })).keys.first
+  end
+
   def test_pop_survives_gc_compaction
     packer = TinyBits::Packer.new
     objs = 50.times.map { |i| { "ab" => "cd#{i}" } }

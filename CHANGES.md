@@ -1,5 +1,10 @@
 # Changes
 
+## 0.9.1 (2026-11-03)
+
+- Faster unpacking: each `Unpacker` keeps a small cache of hash keys across `unpack` calls, so streams of records sharing a schema skip Ruby's global interned string table (about 50% faster on single-schema record streams)
+- Small arrays (up to 16 elements) are created in a single call
+
 ## 0.9.0 (2026-11-03)
 
 - Dictionaries are now handled natively in the C library: `Packer.new(dict: [...])` and `Unpacker.new(dict: [...])`. The dictionary is loaded once, so packing with a dictionary costs about the same as without one, and unpacking with one is faster than without. `DPacker`, `DUnpacker` and `TinyBits.pack/unpack(obj, dict)` keep working and produce the same bytes as before
