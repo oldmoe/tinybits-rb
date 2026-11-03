@@ -186,6 +186,100 @@ class TinyBitsTest < Minitest::Test
     assert dunpacker.finished?
   end
 
+  def test_dictionary_option_reuse
+    dict = ["status", "headers", "body"]
+    packer = TinyBits::Packer.new(dict: dict)
+    unpacker = TinyBits::Unpacker.new(dict: dict)
+    objs = [{ "status" => 200, "body" => "status" }, ["headers", "other", "other"], "body"]
+    3.times do
+      objs.each do |obj|
+        packed = packer.pack(obj)
+        assert_equal TinyBits.pack(obj, dict), packed
+        assert_operator packed.bytesize, :<=, @packer.pack(obj).bytesize
+        assert_equal obj, unpacker.unpack(packed)
+      end
+    end
+    packer.reset
+    assert_equal "", packer.to_s
+    packer << "body"
+    packer << "other"
+    packer << "other"
+    unpacker.buffer = packer.to_s
+    assert_equal ["body", "other", "other"], [unpacker.pop, unpacker.pop, unpacker.pop]
+    assert unpacker.finished?
+    assert unpacker.unpack(packer.pack("status")).frozen?
+  end
+
+  def test_dictionary_ids_match_packed_dictionary
+    # only unique 2..128 byte strings take an id: status=0, sym=1, body=2, "42"=3
+    dict = ["a", "status", "status", "x" * 200, :sym, "", "body", 42]
+    packed = TinyBits::Packer.new(dict: dict).pack(["body", "42", "sym", "status"])
+    assert_equal [0x0C, 0x62, 0x63, 0x61, 0x60], packed.bytes
+    assert_equal ["body", "42", "sym", "status"], TinyBits::Unpacker.new(dict: dict).unpack(packed)
+  end
+
+  def test_dictionary_larger_than_cache
+    dict = (0...300).map { |i| "key#{i}" }
+    obj = (0...300).to_h { |i| ["key#{i}", "key#{299 - i}"] }
+    packed = TinyBits.pack(obj, dict)
+    assert_equal obj, TinyBits.unpack(packed, dict)
+    assert_operator packed.bytesize, :<, @packer.pack(obj).bytesize
+  end
+
+  def test_unpack_empties_the_pop_buffer
+    packer = TinyBits::Packer.new
+    packer << "from a"
+    packer << "more from a"
+    @unpacker.buffer = packer.to_s
+    assert_equal "from a", @unpacker.pop
+    packer.reset
+    packer << "first of b"
+    packer << "second of b"
+    b = packer.to_s.dup
+    assert_equal "first of b", @unpacker.unpack(b)
+    b.replace("x" * 5000)
+    GC.start
+    assert @unpacker.finished?
+    assert_nil @unpacker.pop
+  end
+
+  def test_failed_unpack_does_not_shift_string_ids
+    bad = @packer.pack(["aa", "bb", 1.5])[0..-3]
+    assert_raises(RuntimeError) { @unpacker.unpack(bad) }
+    assert_equal ["cc", "cc"], @unpacker.unpack(@packer.pack(["cc", "cc"]))
+  end
+
+  def test_pop_survives_buffer_mutation
+    packer = TinyBits::Packer.new
+    packer << "one"
+    packer << "two"
+    s = packer.to_s.dup
+    @unpacker.buffer = s
+    assert_equal "one", @unpacker.pop
+    s.replace("y" * 5000)
+    GC.start
+    assert_equal "two", @unpacker.pop
+  end
+
+  def test_pop_survives_gc_compaction
+    packer = TinyBits::Packer.new
+    objs = 50.times.map { |i| { "ab" => "cd#{i}" } }
+    objs.each { |o| packer << o }
+    @unpacker.buffer = packer.to_s.dup # small enough to be an embedded (movable) string
+    got = 10.times.map { @unpacker.pop }
+    GC.verify_compaction_references(expand_heap: true, toward: :empty)
+    got.concat(40.times.map { @unpacker.pop })
+    assert_equal objs, got
+  end
+
+  def test_full_dedupe_cache_keeps_refs
+    strs = (0...256).map { |i| format("s%03d", i) }
+    packed = @packer.pack(strs + strs)
+    # strings + their tags + array header + a ref per repeat (+1 varint byte for ids >= 31)
+    assert_equal strs.sum(&:bytesize) + 256 + 3 + 256 + 225, packed.bytesize
+    assert_equal strs + strs, @unpacker.unpack(packed)
+  end
+
   def test_pop_single_byte_last_object
     [42, nil, true, false, "ab"].each do |last|
       packer = TinyBits::Packer.new

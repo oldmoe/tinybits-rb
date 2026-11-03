@@ -35,6 +35,10 @@ Sometimes you want to encode multiple objects together, even though they are not
   end
 ```
 
+Notes:
+- `unpack` is for a single object, calling it ends any buffer set with `buffer=`, after it `pop` returns `nil` and `finished?` returns `true` until a new buffer is set
+- `buffer=` keeps its own frozen copy of the string (no copy if it is already frozen, like the output of `Packer#to_s`), so modifying the original string while popping is safe
+
 ## External dictionary support (experimental)
 TinyBits is very useful when there are multiple objects that share hash keys and other strings. But what if you are packing and sending single objects instead of multiple ones? 
 In this case string deduplication will not really help as it will not find duplicates, and you will be wasting bandwidth sending the same keys (and potentially some repeated values) over and over with each single object

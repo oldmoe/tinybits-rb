@@ -1,6 +1,6 @@
 /**
  * TinyBits Amalgamated Header
- * Generated on: Fri 30 Oct 2026 12:29:55 PM CET
+ * Generated on: Tue 03 Nov 2026 03:43:24 AM CET
  */
 
 #ifndef TINY_BITS_H
@@ -15,7 +15,8 @@
 #include <math.h>
 #include <stdio.h>
 
-#define TB_HASH_SIZE 128
+#define TB_HASH_BITS 7
+#define TB_HASH_SIZE (1 << TB_HASH_BITS)
 #define TB_HASH_CACHE_SIZE 256
 #define MAX_BYTES 9
 #define TB_DDP_STR_LEN_MAX 128
@@ -84,7 +85,7 @@ typedef struct HashTable {
     uint32_t next_id;
     uint32_t cache_size;
     uint32_t cache_pos;
-    uint8_t bins[TB_HASH_SIZE];
+    uint16_t bins[TB_HASH_SIZE]; // 1-based cache index, must hold TB_HASH_CACHE_SIZE
 } HashTable;
 
 static inline uint32_t fast_hash_32(const char* str, uint16_t len) {
@@ -95,6 +96,11 @@ static inline uint32_t fast_hash_32(const char* str, uint16_t len) {
            ((unsigned char)str[len-1]);
     //hash ^= (((unsigned char)str[len-2] << 24) | ((unsigned char)str[len-1] << 16));
     return hash;
+}
+
+// bin index from the top bits of a multiplicative mix (the low bits alone are just the last byte)
+static inline uint32_t tb_hash_bin(uint32_t hash_code) {
+    return (hash_code * 0x9E3779B1u) >> (32 - TB_HASH_BITS);
 }
 
 static inline int encode_varint(uint64_t value, uint8_t* buffer) {
@@ -413,7 +419,9 @@ typedef struct tiny_bits_packer {
     size_t capacity;         // Total allocated size of the buffer
     size_t current_pos;      // Current position in the buffer (write position)
     HashTable encode_table; // Add the hash table here
-    HashTable dictionary;
+    size_t dict_len;         // dictionary bytes stored at the start of buffer
+    uint32_t dict_count;     // dedupe cache entries taken by the dictionary
+    uint16_t dict_bins[TB_HASH_SIZE]; // encode_table.bins right after loading the dictionary
     uint8_t features;
     // Add any other encoder-specific state here if needed (e.g., string deduplication table later)
 } tiny_bits_packer;
@@ -451,6 +459,9 @@ tiny_bits_packer *tiny_bits_packer_create(size_t initial_capacity, uint8_t featu
     encoder->capacity = initial_capacity;
     encoder->current_pos = 0;
     encoder->features = features;
+    encoder->dict_len = 0;
+    encoder->dict_count = 0;
+    memset(encoder->dict_bins, 0, sizeof(encoder->dict_bins));
 
     // Only allocate hash table if deduplication is enabled
     if (features & TB_FEATURE_STRING_DEDUPE) {
@@ -464,7 +475,7 @@ tiny_bits_packer *tiny_bits_packer_create(size_t initial_capacity, uint8_t featu
         encoder->encode_table.cache_size = TB_HASH_CACHE_SIZE;
         encoder->encode_table.cache_pos = 0;
         encoder->encode_table.next_id = 0;
-        memset(encoder->encode_table.bins, 0, TB_HASH_SIZE * sizeof(uint8_t));
+        memset(encoder->encode_table.bins, 0, sizeof(encoder->encode_table.bins));
     } else {
         encoder->encode_table.cache = NULL;
         encoder->encode_table.cache_size = 0;
@@ -482,15 +493,82 @@ tiny_bits_packer *tiny_bits_packer_create(size_t initial_capacity, uint8_t featu
  *
  * @note This function allows for more efficient packing by reusing the same packer object
  */
-inline void tiny_bits_packer_reset(tiny_bits_packer *encoder) {
+static inline void tiny_bits_packer_reset(tiny_bits_packer *encoder) {
     if (!encoder) return;
-    encoder->current_pos = 0;  
+    encoder->current_pos = encoder->dict_len;
     if (encoder->features & TB_FEATURE_STRING_DEDUPE) {
         encoder->encode_table.next_id = 0;
-        encoder->encode_table.cache_pos = 0;
-        memset(encoder->encode_table.bins, 0, TB_HASH_SIZE * sizeof(uint8_t));
+        encoder->encode_table.cache_pos = encoder->dict_count;
+        memcpy(encoder->encode_table.bins, encoder->dict_bins, sizeof(encoder->dict_bins));
     }
-    
+}
+
+/**
+ * @brief Loads an external dictionary of strings used for deduplication
+ *
+ * @param encoder The packer instance (must have TB_FEATURE_STRING_DEDUPE)
+ * @param strs Array of string pointers (order is significant)
+ * @param lens Array of string lengths
+ * @param count Number of strings
+ * @return 1 on success, 0 on error
+ *
+ * @note The dictionary is not written to the output, the unpacker must be given the same dictionary.
+ * Strings are copied, and the packer is reset. Strings are assigned ids exactly as if they were packed
+ * (in order) at the start of every output, so only the first 256 dedupable strings (2-128 bytes) count.
+ */
+static inline int tiny_bits_packer_set_dict(tiny_bits_packer *encoder, const char **strs, const size_t *lens, size_t count) {
+    if (!encoder || !(encoder->features & TB_FEATURE_STRING_DEDUPE)) return 0;
+    HashTable *table = &encoder->encode_table;
+    encoder->dict_len = 0;
+    encoder->dict_count = 0;
+    memset(encoder->dict_bins, 0, sizeof(encoder->dict_bins));
+    tiny_bits_packer_reset(encoder);
+
+    for (size_t i = 0; i < count && table->cache_pos < TB_HASH_CACHE_SIZE; i++) {
+        const char *str = strs[i];
+        size_t len = lens[i];
+        if (len < 2 || len > 128) continue;
+        uint32_t hash_code = fast_hash_32(str, len);
+        uint32_t hash = tb_hash_bin(hash_code);
+        uint16_t index = table->bins[hash];
+        while (index > 0) {
+            HashEntry entry = table->cache[index - 1];
+            if (hash_code == entry.hash && len == entry.length
+                && memcmp(str, encoder->buffer + entry.offset, len) == 0) break;
+            index = entry.next_index;
+        }
+        if (index > 0) continue; // duplicate, packing it would emit a ref and take no id
+
+        uint8_t *buffer = tiny_bits_packer_ensure_capacity(encoder, len);
+        if (!buffer) return 0;
+        memcpy(buffer, str, len);
+        HashEntry *new_entry = &table->cache[table->cache_pos++];
+        new_entry->hash = hash_code;
+        new_entry->length = len;
+        new_entry->offset = encoder->current_pos;
+        new_entry->next_index = table->bins[hash];
+        table->bins[hash] = table->cache_pos;
+        encoder->current_pos += len;
+    }
+
+    encoder->dict_len = encoder->current_pos;
+    encoder->dict_count = table->cache_pos;
+    memcpy(encoder->dict_bins, table->bins, sizeof(encoder->dict_bins));
+    return 1;
+}
+
+/**
+ * @brief Returns a pointer to the packed output (excludes the dictionary)
+ */
+static inline const unsigned char *tiny_bits_packer_data(const tiny_bits_packer *encoder) {
+    return encoder->buffer + encoder->dict_len;
+}
+
+/**
+ * @brief Returns the size of the packed output (excludes the dictionary)
+ */
+static inline size_t tiny_bits_packer_size(const tiny_bits_packer *encoder) {
+    return encoder->current_pos - encoder->dict_len;
 }
 
 /**
@@ -715,8 +793,8 @@ static inline int pack_str(tiny_bits_packer *encoder, char* str, uint32_t str_le
     uint32_t hash = 0;
     if ((encoder->features & TB_FEATURE_STRING_DEDUPE) && str_len >= 2 && str_len <= 128) {
         hash_code = fast_hash_32(str, str_len);
-        hash = hash_code % TB_HASH_SIZE;
-        uint8_t index = encoder->encode_table.bins[hash];
+        hash = tb_hash_bin(hash_code);
+        uint16_t index = encoder->encode_table.bins[hash];
         while (index > 0) {
             HashEntry entry = encoder->encode_table.cache[index - 1];
             if (hash_code == entry.hash 
@@ -940,7 +1018,8 @@ typedef struct tiny_bits_unpacker {
     } *strings;           // Array of decoded strings
     size_t strings_size;  // Capacity of strings array
     size_t strings_count; // Number of strings stored
-    HashTable dictionary;
+    char *dict;           // copy of the dictionary bytes, strings[0..dict_count) point into it
+    size_t dict_count;    // number of strings entries taken by the dictionary
 } tiny_bits_unpacker;
 
 /**
@@ -962,7 +1041,61 @@ tiny_bits_unpacker *tiny_bits_unpacker_create(void) {
         return NULL;
     }
     decoder->strings_count = 0;
+    decoder->dict = NULL;
+    decoder->dict_count = 0;
     return decoder;
+}
+
+/**
+ * @brief Loads an external dictionary of strings, must match the one given to the packer
+ *
+ * @param decoder The unpacker instance
+ * @param strs Array of string pointers (order is significant)
+ * @param lens Array of string lengths
+ * @param count Number of strings
+ * @return 1 on success, 0 on error
+ *
+ * @note Strings are copied. Dictionary strings are returned as dedupe references, with ids 1..n
+ * (see unpack_value), so client code can map them to pre-built objects.
+ */
+static inline int tiny_bits_unpacker_set_dict(tiny_bits_unpacker *decoder, const char **strs, const size_t *lens, size_t count) {
+    if (!decoder) return 0;
+    size_t total = 0;
+    for (size_t i = 0; i < count; i++) total += lens[i];
+    char *dict = (char *)malloc(total ? total : 1);
+    if (!dict) return 0;
+    free(decoder->dict);
+    decoder->dict = dict;
+    decoder->dict_count = 0;
+    decoder->strings_count = 0;
+
+    size_t offset = 0;
+    for (size_t i = 0; i < count && decoder->dict_count < TB_HASH_CACHE_SIZE; i++) {
+        size_t len = lens[i];
+        if (len < 2 || len > 128) continue;
+        int duplicate = 0;
+        for (size_t j = 0; j < decoder->dict_count; j++) {
+            if (decoder->strings[j].length == len && memcmp(decoder->strings[j].str, strs[i], len) == 0) {
+                duplicate = 1;
+                break;
+            }
+        }
+        if (duplicate) continue;
+        if (decoder->dict_count >= decoder->strings_size) {
+            size_t new_size = decoder->strings_size * 2;
+            void *new_strings = realloc(decoder->strings, new_size * sizeof(*decoder->strings));
+            if (!new_strings) return 0;
+            decoder->strings = new_strings;
+            decoder->strings_size = new_size;
+        }
+        memcpy(dict + offset, strs[i], len);
+        decoder->strings[decoder->dict_count].str = dict + offset;
+        decoder->strings[decoder->dict_count].length = len;
+        decoder->dict_count++;
+        offset += len;
+    }
+    decoder->strings_count = decoder->dict_count;
+    return 1;
 }
 
 /**
@@ -982,7 +1115,7 @@ static inline void tiny_bits_unpacker_set_buffer(tiny_bits_unpacker *decoder, co
     decoder->buffer = buffer;
     decoder->size = size;
     decoder->current_pos = 0;
-    decoder->strings_count = 0;
+    decoder->strings_count = decoder->dict_count;
 }
 
 /**
@@ -995,7 +1128,7 @@ static inline void tiny_bits_unpacker_set_buffer(tiny_bits_unpacker *decoder, co
 static inline void tiny_bits_unpacker_reset(tiny_bits_unpacker *decoder) {
     if (!decoder) return;
     decoder->current_pos = 0;
-    decoder->strings_count = 0;
+    decoder->strings_count = decoder->dict_count;
 }
 
 
@@ -1010,6 +1143,7 @@ void tiny_bits_unpacker_destroy(tiny_bits_unpacker *decoder) {
     if (decoder->strings) {
         free(decoder->strings);
     }
+    free(decoder->dict);
     free(decoder);
 }
 
@@ -1215,39 +1349,31 @@ static inline enum tiny_bits_type unpack_value(tiny_bits_unpacker *decoder, tiny
     }
 
     uint8_t tag = decoder->buffer[decoder->current_pos++];
-    // Dispatch based on tag
-    if ((tag & TB_INT_TAG) == TB_INT_TAG) { // Integers
+    // Dispatch on tag ranges, each tag group starts at a power of two
+    if (tag >= TB_INT_TAG) { // Integers
         return _unpack_int(decoder, tag, value);
-    } else if ((tag & TB_STR_TAG) == TB_STR_TAG) { // Strings
+    } else if (tag >= TB_STR_TAG) { // Strings
         return _unpack_str(decoder, tag, value);
-    } else if (tag == TB_NIL_TAG) {
-        return TINY_BITS_NULL;
-    } else if (tag == TB_NAN_TAG) {
-        return TINY_BITS_NAN;
-    } else if (tag == TB_INF_TAG) {
-        return TINY_BITS_INF;
-    } else if (tag == TB_NNF_TAG) {
-        return TINY_BITS_N_INF;
-    } else if ((tag & TB_DBL_TAG) == TB_DBL_TAG) { // Doubles
+    } else if (tag >= TB_DBL_TAG) { // Doubles
+        if (tag == TB_NAN_TAG) return TINY_BITS_NAN;
+        if (tag == TB_INF_TAG) return TINY_BITS_INF;
+        if (tag == TB_NNF_TAG) return TINY_BITS_N_INF;
         return _unpack_double(decoder, tag, value);
-    } else if ((tag & TB_MAP_TAG) == TB_MAP_TAG) { // Maps
+    } else if (tag >= TB_MAP_TAG) { // Maps
         return _unpack_map(decoder, tag, value);
-    } else if ((tag & TB_ARR_TAG) == TB_ARR_TAG) { // Arrays
+    } else if (tag >= TB_ARR_TAG) { // Arrays
         return _unpack_arr(decoder, tag, value);
-    } else if (tag == TB_BLB_TAG) { // Blob
-        return _unpack_blob(decoder, tag, value);
-    } else if (tag == TB_DTM_TAG) {
-        return _unpack_datetime(decoder, tag, value);
-    } else if (tag == TB_SEP_TAG) {
-        return TINY_BITS_SEP;
-    } else if (tag == TB_EXT_TAG) {
-        return TINY_BITS_EXT;
-    } else if (tag == TB_TRU_TAG) {
-        return TINY_BITS_TRUE;
-    } else if (tag == TB_FLS_TAG) {
-        return TINY_BITS_FALSE;
     }
-    return TINY_BITS_ERROR; // Unknown tag
+    switch (tag) {
+        case TB_NIL_TAG: return TINY_BITS_NULL;
+        case TB_TRU_TAG: return TINY_BITS_TRUE;
+        case TB_FLS_TAG: return TINY_BITS_FALSE;
+        case TB_BLB_TAG: return _unpack_blob(decoder, tag, value);
+        case TB_DTM_TAG: return _unpack_datetime(decoder, tag, value);
+        case TB_SEP_TAG: return TINY_BITS_SEP;
+        case TB_EXT_TAG: return TINY_BITS_EXT;
+    }
+    return TINY_BITS_ERROR; // Unknown tag (TB_NXT_TAG)
 }
 
 

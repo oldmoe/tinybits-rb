@@ -25,7 +25,7 @@ VALUE rb_cUnpacker;
 
 // Forward declarations
 static VALUE rb_packer_alloc(VALUE klass);
-static VALUE rb_packer_init(VALUE self);
+static VALUE rb_packer_init(int argc, VALUE* argv, VALUE self);
 static VALUE rb_unpacker_alloc(VALUE klass);
 static VALUE rb_unpacker_init(int argc, VALUE* argv, VALUE self);
 static VALUE rb_pack(VALUE self, VALUE obj);
@@ -36,6 +36,8 @@ typedef struct {
     tiny_bits_packer* packer;
     int error_occurred; // 0 for no error, 1 if callback encountered an error
 } HashIterContext;
+
+static int binary_encindex; // rb_ascii8bit_encindex(), set in Init
 
 // Forward declaration for the recursive function
 static int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj, VALUE context);
@@ -71,7 +73,7 @@ static void packer_free(void* data) {
     if (packer_data->packer) {
         tiny_bits_packer_destroy(packer_data->packer);
     }
-    free(packer_data);
+    xfree(packer_data);
 }
 
 static size_t packer_memsize(const void* data) {
@@ -90,20 +92,51 @@ static VALUE rb_packer_alloc(VALUE klass) {
     return TypedData_Wrap_Struct(klass, &packer_data_type, packer_data);
 }
 
-/* 
+// Calls set_dict(target, strs, lens, count) with the #to_s of each dictionary member
+#define WITH_DICT_STRINGS(dict, set_dict, target) do {                                  \
+    Check_Type(dict, T_ARRAY);                                                         \
+    long dict_n = RARRAY_LEN(dict);                                                    \
+    VALUE dict_strs = rb_ary_new_capa(dict_n);                                         \
+    for (long i = 0; i < dict_n; i++) {                                                \
+        rb_ary_push(dict_strs, rb_obj_as_string(rb_ary_entry(dict, i)));               \
+    }                                                                                  \
+    VALUE dict_buf;                                                                    \
+    const char **dict_ptrs = ALLOCV(dict_buf, dict_n * (sizeof(char *) + sizeof(size_t)) + 1); \
+    size_t *dict_lens = (size_t *)(dict_ptrs + dict_n);                                \
+    for (long i = 0; i < dict_n; i++) {                                                \
+        VALUE s = RARRAY_AREF(dict_strs, i);                                           \
+        dict_ptrs[i] = RSTRING_PTR(s);                                                 \
+        dict_lens[i] = RSTRING_LEN(s);                                                 \
+    }                                                                                  \
+    int dict_ok = set_dict(target, dict_ptrs, dict_lens, dict_n);                      \
+    ALLOCV_END(dict_buf);                                                              \
+    RB_GC_GUARD(dict_strs);                                                            \
+    if (!dict_ok) rb_raise(rb_eRuntimeError, "Failed to set dictionary");              \
+} while (0)
+
+/*
  * Document-method: initialize
  *
  * Initializes a new Packer object
  *
+ * @param dict [Array] strings (or objects responding to #to_s) to deduplicate against without
+ *   storing them in the output (order is significant), the unpacker must use the same dict
  * @return [Packer] The initialized packer object.
  */
-static VALUE rb_packer_init(VALUE self) {
+static VALUE rb_packer_init(int argc, VALUE* argv, VALUE self) {
     PackerData* packer_data;
     TypedData_Get_Struct(self, PackerData, &packer_data_type, packer_data);
+
+    VALUE opts = Qnil;
+    rb_scan_args(argc, argv, ":", &opts);
+    VALUE dict = NIL_P(opts) ? Qnil : rb_hash_lookup(opts, ID2SYM(rb_intern("dict")));
 
     packer_data->packer = tiny_bits_packer_create(256, (TB_FEATURE_STRING_DEDUPE | TB_FEATURE_COMPRESS_FLOATS) | 0); // Initial capacity and features
     if (!packer_data->packer) {
         rb_raise(rb_eRuntimeError, "Failed to initialize packer");
+    }
+    if (!NIL_P(dict)) {
+        WITH_DICT_STRINGS(dict, tiny_bits_packer_set_dict, packer_data->packer);
     }
     return self;
 }
@@ -112,7 +145,7 @@ static VALUE rb_packer_init(VALUE self) {
 static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj, VALUE context) {
     switch (TYPE(obj)) {
         case T_STRING: {
-            if (ENCODING_GET_INLINED(obj) == rb_ascii8bit_encindex())
+            if (ENCODING_GET_INLINED(obj) == binary_encindex)
                 return pack_blob(packer, RSTRING_PTR(obj), RSTRING_LEN(obj));
             return pack_str(packer, RSTRING_PTR(obj), RSTRING_LEN(obj));
         }
@@ -128,13 +161,12 @@ static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj
             int written = pack_arr(packer, len); 
             if (written <= 0) return 0; // Error check based on tiny_bits API
             for (long i = 0; i < len; i++) {
-                if(!pack_ruby_object_recursive(packer, rb_ary_entry(obj, i), context)) return 0; // Propagate error
+                if(!pack_ruby_object_recursive(packer, RARRAY_AREF(obj, i), context)) return 0; // Propagate error
             }
             return 1; // Success
         }
         case T_FIXNUM: {
-            int64_t val = NUM2LONG(obj); // Assumes fits in int64_t
-            return pack_int(packer, val);
+            return pack_int(packer, (int64_t)FIX2LONG(obj));
         }
         case T_BIGNUM: {
             // within int64: a Bignum only past the Fixnum range (2**62)
@@ -145,8 +177,7 @@ static inline int pack_ruby_object_recursive(tiny_bits_packer* packer, VALUE obj
             return pack_int(packer, (int64_t)NUM2LL(obj));
         }
         case T_FLOAT: {
-            double val = NUM2DBL(obj);
-            return pack_double(packer, val);
+            return pack_double(packer, RFLOAT_VALUE(obj));
         }
         case T_NIL:
             return pack_null(packer);
@@ -206,7 +237,7 @@ static VALUE rb_pack(VALUE self, VALUE obj) {
         rb_raise(rb_eRuntimeError, "Failed to pack object (unsupported type or packing error)");
     }
 
-    VALUE result = rb_str_new((const char*)packer_data->packer->buffer, packer_data->packer->current_pos);
+    VALUE result = rb_str_new((const char*)tiny_bits_packer_data(packer_data->packer), tiny_bits_packer_size(packer_data->packer));
     rb_obj_freeze(result);
     return result;
 }
@@ -266,10 +297,10 @@ static VALUE rb_to_s(VALUE self){
         rb_raise(rb_eRuntimeError, "Packer not initialized");
     }
 
-    if(packer_data->packer->current_pos == 0){
+    if(tiny_bits_packer_size(packer_data->packer) == 0){
         return rb_str_new("", 0);
     }
-    VALUE result = rb_str_new((const char*)packer_data->packer->buffer, packer_data->packer->current_pos);
+    VALUE result = rb_str_new((const char*)tiny_bits_packer_data(packer_data->packer), tiny_bits_packer_size(packer_data->packer));
     rb_obj_freeze(result);
     return result;
 }
@@ -299,19 +330,27 @@ static VALUE rb_reset(VALUE self){
 typedef struct {
     tiny_bits_unpacker* unpacker;
     int symbolize_keys; // map keys that are strings come back as symbols
-    //size_t strings_index;
-    //VALUE ruby_strings[TB_HASH_CACHE_SIZE];
+    VALUE strings;      // Ruby strings by dedupe id, dictionary strings first
+    VALUE buffer;       // the buffer set by #buffer=, kept alive while popping
 } UnpackerData;
+
+static void unpacker_mark(void* data) {
+    UnpackerData* unpacker_data = (UnpackerData*)data;
+    rb_gc_mark_movable(unpacker_data->strings);
+    rb_gc_mark(unpacker_data->buffer); // pinned, the C unpacker points into it (embedded strings move)
+}
+
+static void unpacker_compact(void* data) {
+    UnpackerData* unpacker_data = (UnpackerData*)data;
+    unpacker_data->strings = rb_gc_location(unpacker_data->strings);
+}
 
 static void unpacker_free(void* data) {
     UnpackerData* unpacker_data = (UnpackerData*)data;
     if (unpacker_data->unpacker) {
         tiny_bits_unpacker_destroy(unpacker_data->unpacker);
     }
-    //for (size_t i = 0; i < TB_HASH_CACHE_SIZE; i++) {
-        //unpacker_data->ruby_strings[i] = Qnil;
-    //}
-    free(unpacker_data);
+    xfree(unpacker_data);
 }
 
 static size_t unpacker_memsize(const void* data) {
@@ -320,7 +359,7 @@ static size_t unpacker_memsize(const void* data) {
 
 static const rb_data_type_t unpacker_data_type = {
     "TinyBits::Unpacker",
-    {0, unpacker_free, unpacker_memsize,},
+    {unpacker_mark, unpacker_free, unpacker_memsize, unpacker_compact,},
     0, 0, RUBY_TYPED_FREE_IMMEDIATELY
 };
 
@@ -328,6 +367,8 @@ static VALUE rb_unpacker_alloc(VALUE klass) {
     UnpackerData* unpacker_data = ALLOC(UnpackerData);
     unpacker_data->unpacker = NULL;
     unpacker_data->symbolize_keys = 0;
+    unpacker_data->strings = Qnil;
+    unpacker_data->buffer = Qnil;
     return TypedData_Wrap_Struct(klass, &unpacker_data_type, unpacker_data);
 }
 
@@ -337,6 +378,7 @@ static VALUE rb_unpacker_alloc(VALUE klass) {
  * Initializes a new Unpacker.
  *
  * @param symbolize_keys [Boolean] unpack hash keys that are strings as symbols (default false)
+ * @param dict [Array] the dictionary the packer used (order is significant)
  * @return [Unpacker] The initialized unpacker object.
  */
 static VALUE rb_unpacker_init(int argc, VALUE* argv, VALUE self) {
@@ -344,9 +386,11 @@ static VALUE rb_unpacker_init(int argc, VALUE* argv, VALUE self) {
     TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
 
     VALUE opts = Qnil;
+    VALUE dict = Qnil;
     rb_scan_args(argc, argv, ":", &opts);
     if (!NIL_P(opts)) {
         unpacker_data->symbolize_keys = RTEST(rb_hash_lookup(opts, ID2SYM(rb_intern("symbolize_keys"))));
+        dict = rb_hash_lookup(opts, ID2SYM(rb_intern("dict")));
     }
 
     unpacker_data->unpacker = tiny_bits_unpacker_create();
@@ -354,8 +398,20 @@ static VALUE rb_unpacker_init(int argc, VALUE* argv, VALUE self) {
         rb_raise(rb_eRuntimeError, "Failed to initialize unpacker");
     }
     VALUE strings = rb_ary_new_capa(TB_HASH_CACHE_SIZE);
-    rb_iv_set(self, "@strings", strings);
+    if (!NIL_P(dict)) {
+        tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
+        WITH_DICT_STRINGS(dict, tiny_bits_unpacker_set_dict, unpacker);
+        // dictionary strings stay in the first dict_count slots, only later ones are cleared
+        for (size_t i = 0; i < unpacker->dict_count; i++) {
+            rb_ary_push(strings, rb_enc_interned_str(unpacker->strings[i].str, unpacker->strings[i].length, rb_utf8_encoding()));
+        }
+    }
+    RB_OBJ_WRITE(self, &unpacker_data->strings, strings);
     return self;
+}
+
+static inline void clear_strings(VALUE strings, UnpackerData* unpacker_data) {
+    rb_ary_resize(strings, unpacker_data->unpacker->dict_count);
 }
 
 static inline VALUE rb_unpack_str(VALUE strings, UnpackerData* unpacker_data, tiny_bits_value value, size_t interned){
@@ -418,14 +474,22 @@ static VALUE unpack_ruby_object(VALUE strings, UnpackerData* unpacker_data, size
         }
         case TINY_BITS_MAP: {
             VALUE hash = rb_hash_new_capa(value.length);
-            for (size_t i = 0; i < value.length; i++) {  
-                VALUE key = unpack_ruby_object(strings, unpacker_data, 0);
+            VALUE pairs[2 * 16]; // small maps are inserted in one bulk call
+            int bulk = value.length <= 16;
+            for (size_t i = 0; i < value.length; i++) {
+                VALUE key = unpack_ruby_object(strings, unpacker_data, 1);
                 if (key == Qundef) return Qundef; // Error
                 if (unpacker_data->symbolize_keys && RB_TYPE_P(key, T_STRING)) key = rb_str_intern(key);
                 VALUE val = unpack_ruby_object(strings, unpacker_data, 0);
                 if (val == Qundef) return Qundef; // Error
-                rb_hash_aset(hash, key, val);
+                if (bulk) {
+                    pairs[2 * i] = key;
+                    pairs[2 * i + 1] = val;
+                } else {
+                    rb_hash_aset(hash, key, val);
+                }
             }
+            if (bulk) rb_hash_bulk_insert(2 * value.length, pairs, hash);
             return hash;
         }
         case TINY_BITS_BLOB:
@@ -462,14 +526,18 @@ static VALUE rb_unpack(VALUE self, VALUE buffer) {
 
     tiny_bits_unpacker_set_buffer(unpacker_data->unpacker, (const unsigned char*)RSTRING_PTR(buffer), RSTRING_LEN(buffer));
 
-    VALUE array = rb_iv_get(self, "@strings");
+    VALUE array = unpacker_data->strings;
+    clear_strings(array, unpacker_data); // a failed unpack or a pop session may have left entries
     VALUE result = unpack_ruby_object(array, unpacker_data, 0);
+    RB_GC_GUARD(buffer);
+    // unpack is for one object only, a later #pop finds an empty buffer (and never reads this one)
+    unpacker_data->unpacker->current_pos = unpacker_data->unpacker->size;
 
     if (result == Qundef) {
         rb_raise(rb_eRuntimeError, "Failed to unpack data");
     }
 
-    rb_ary_clear(array);
+    clear_strings(array, unpacker_data);
 
     return result;
 }
@@ -492,13 +560,13 @@ static VALUE rb_set_buffer(VALUE self, VALUE buffer){
     }
 
     StringValue(buffer); // Ensure it's a string
+    buffer = rb_str_new_frozen(buffer); // the caller mutating their string must not move the bytes we point into
 
     tiny_bits_unpacker_set_buffer(unpacker_data->unpacker, (const unsigned char*)RSTRING_PTR(buffer), RSTRING_LEN(buffer));
 
-    // set the buffer as an instance variable to mainatin a reference to it
-    rb_iv_set(self, "@buffer", buffer);
-    VALUE array = rb_iv_get(self, "@strings");
-    rb_ary_clear(array);
+    // keep a reference to the buffer while popping
+    RB_OBJ_WRITE(self, &unpacker_data->buffer, buffer);
+    clear_strings(unpacker_data->strings, unpacker_data);
     return self;
 }
 
@@ -512,16 +580,13 @@ static VALUE rb_set_buffer(VALUE self, VALUE buffer){
  * @note Requires #buffer= to be called first.
  */
 static VALUE rb_pop(VALUE self) {
-
-    VALUE buffer = rb_iv_get(self, "@buffer");
-    VALUE array = rb_iv_get(self, "@strings");
-    
-    if(buffer == Qnil){
-        rb_raise(rb_eRuntimeError, "No buffer is set");
-    }
-
     UnpackerData* unpacker_data;
     TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
+
+    VALUE array = unpacker_data->strings;
+    if(unpacker_data->buffer == Qnil){
+        rb_raise(rb_eRuntimeError, "No buffer is set");
+    }
 
     if (!unpacker_data->unpacker) {
         rb_raise(rb_eRuntimeError, "Unpacker not initialized");
@@ -530,7 +595,7 @@ static VALUE rb_pop(VALUE self) {
     tiny_bits_unpacker* unpacker = unpacker_data->unpacker;
 
     if(unpacker->current_pos >= unpacker->size){
-        rb_ary_clear(array);
+        clear_strings(array, unpacker_data);
         return Qnil;
     }
 
@@ -540,7 +605,7 @@ static VALUE rb_pop(VALUE self) {
     }
 
     if(unpacker->current_pos >= unpacker->size){
-        rb_ary_clear(array);
+        clear_strings(array, unpacker_data);
     }
 
     return result;
@@ -556,12 +621,11 @@ static VALUE rb_pop(VALUE self) {
  * @note Requires #buffer= to be called first.
  */
 static VALUE rb_finished(VALUE self){
-    VALUE buffer = rb_iv_get(self, "@buffer");
-    if(buffer == Qnil){
-        rb_raise(rb_eRuntimeError, "No buffer is set");
-    }
     UnpackerData* unpacker_data;
     TypedData_Get_Struct(self, UnpackerData, &unpacker_data_type, unpacker_data);
+    if(unpacker_data->buffer == Qnil){
+        rb_raise(rb_eRuntimeError, "No buffer is set");
+    }
 
     if (!unpacker_data->unpacker) {
         rb_raise(rb_eRuntimeError, "Unpacker not initialized");
@@ -577,12 +641,13 @@ static VALUE rb_finished(VALUE self){
 }
 
 void Init_tinybits_ext(void) {
+    binary_encindex = rb_ascii8bit_encindex();
     rb_mTinyBits = rb_define_module("TinyBits");
     rb_cPacker = rb_define_class_under(rb_mTinyBits, "Packer", rb_cObject);
     rb_cUnpacker = rb_define_class_under(rb_mTinyBits, "Unpacker", rb_cObject);
 
     rb_define_alloc_func(rb_cPacker, rb_packer_alloc);
-    rb_define_method(rb_cPacker, "initialize", rb_packer_init, 0);
+    rb_define_method(rb_cPacker, "initialize", rb_packer_init, -1);
     rb_define_method(rb_cPacker, "pack", rb_pack, 1);
     rb_define_alias(rb_cPacker, "encode", "pack");
     rb_define_alias(rb_cPacker, "dump", "pack");
