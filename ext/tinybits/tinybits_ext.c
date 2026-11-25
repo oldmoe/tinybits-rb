@@ -83,7 +83,7 @@ static size_t packer_memsize(const void* data) {
 static const rb_data_type_t packer_data_type = {
     "TinyBits::Packer",
     {0, packer_free, packer_memsize,},
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+    0, 0, RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED // holds no Ruby objects
 };
 
 static VALUE rb_packer_alloc(VALUE klass) {
@@ -331,6 +331,7 @@ static VALUE rb_reset(VALUE self){
 
 // Unpacker structure
 typedef struct {
+    VALUE self;         // the Unpacker: stores into it go through RB_OBJ_WRITE(self, ...)
     tiny_bits_unpacker* unpacker;
     int symbolize_keys; // map keys that are strings come back as symbols
     VALUE strings;      // Ruby strings by dedupe id, dictionary strings first
@@ -349,6 +350,7 @@ static void unpacker_mark(void* data) {
 
 static void unpacker_compact(void* data) {
     UnpackerData* unpacker_data = (UnpackerData*)data;
+    unpacker_data->self = rb_gc_location(unpacker_data->self);
     unpacker_data->strings = rb_gc_location(unpacker_data->strings);
     for (int i = 0; i < unpacker_data->keys_count; i++) unpacker_data->keys[i] = rb_gc_location(unpacker_data->keys[i]);
 }
@@ -376,7 +378,7 @@ static inline VALUE key_cache_fetch(UnpackerData* unpacker_data, const char* str
         low = 0;
     }
     MEMMOVE(&keys[low + 1], &keys[low], VALUE, unpacker_data->keys_count - low);
-    keys[low] = key;
+    RB_OBJ_WRITE(unpacker_data->self, &keys[low], key); // the keys moved above were in it already
     unpacker_data->keys_count++;
     return key;
 }
@@ -396,7 +398,7 @@ static size_t unpacker_memsize(const void* data) {
 static const rb_data_type_t unpacker_data_type = {
     "TinyBits::Unpacker",
     {unpacker_mark, unpacker_free, unpacker_memsize, unpacker_compact,},
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+    0, 0, RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED
 };
 
 static VALUE rb_unpacker_alloc(VALUE klass) {
@@ -407,7 +409,9 @@ static VALUE rb_unpacker_alloc(VALUE klass) {
     unpacker_data->buffer = Qnil;
     unpacker_data->keys_count = 0;
     unpacker_data->keys_misses = 0;
-    return TypedData_Wrap_Struct(klass, &unpacker_data_type, unpacker_data);
+    VALUE self = TypedData_Wrap_Struct(klass, &unpacker_data_type, unpacker_data);
+    unpacker_data->self = self;
+    return self;
 }
 
 /*

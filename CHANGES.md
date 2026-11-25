@@ -1,5 +1,9 @@
 # Changes
 
+## 0.9.2 (2026-11-25)
+
+- `Packer` and `Unpacker` are write-barrier protected, so a minor GC no longer re-marks them and what they hold (an `Unpacker`'s buffer, dedupe strings and key cache). The key cache's store now goes through a write barrier
+
 ## 0.9.1 (2026-11-03)
 
 - Faster unpacking: each `Unpacker` keeps a small cache of hash keys across `unpack` calls, so streams of records sharing a schema skip Ruby's global interned string table (about 50% faster on single-schema record streams)
